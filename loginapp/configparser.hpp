@@ -31,7 +31,7 @@ public:
             if ( line[0] == '\n' || line[0] == '#' || line.empty() ) {
                 continue;
             }
-            std::cout << "Read line: " << line << std::endl;
+            // std::cout << "Read line: " << line << std::endl;
             if ( line[0] == '[' ) {
                 if ( line[line.length() - 1] != ']' ) {
                     std::cout << "parser file error, the config file has some problems."
@@ -48,8 +48,8 @@ public:
                 if ( pos == std::string::npos ) {
                     continue;
                 }
-                std::cout << pos << std::endl;
-                std::cout << line.length() - 1 << std::endl;
+                // std::cout << pos << std::endl;
+                // std::cout << line.length() - 1 << std::endl;
                 std::string key;
                 std::string value;
 
@@ -87,12 +87,12 @@ public:
             Section::iterator it = sit->second.find(key);
             if ( it != sit->second.end() ) {
                 return it->second;
-            } else {
+            }/* else {
                 std::cout << "section has no key " << key << std::endl;
-            }
-        } else {
+            }*/
+        }/* else {
             std::cout << "No section " << section << std::endl;
-        }
+        }*/
         return "";
     }
 

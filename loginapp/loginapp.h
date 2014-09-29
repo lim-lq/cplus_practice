@@ -15,25 +15,28 @@ public:
     ~MysqlDB();
     int connect();
     int query(const std::string& sql);
-
+    int count_result();
 private:
     MYSQL m_connection;
     MYSQL_RES *m_result;
     MYSQL_ROW m_row;
-    string m_host;
-    string m_user;
-    string m_passwd;
-    string m_db;
+    std::string m_host;
+    std::string m_user;
+    std::string m_passwd;
+    std::string m_db;
     unsigned int m_port;
 };
 
 class LoginApp{
 public:
-    LoginApp();
-    ~LoginAPP(){}
-    int login(const string& username, const string& passwd);
+    LoginApp(){
+        m_mysqldb = NULL;
+    }
+    ~LoginApp(){}
+    void Initmysql(MysqlDB* mysqldb);
+    int login(const std::string& username, const std::string& passwd);
 private:
-    MysqlDB m_mysqldb;
+    MysqlDB *m_mysqldb;
 }; // end class LoginApp
 } // end namespace coco
 #endif
