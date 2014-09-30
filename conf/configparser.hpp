@@ -64,7 +64,7 @@ public:
                 if ( value.empty() ) {
                     continue;
                 }
-                curSection->insert(make_pair(key, value));
+                (*curSection)[key] = value;
             }
         }
         return true;

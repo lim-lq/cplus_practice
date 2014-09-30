@@ -4,9 +4,11 @@
 #include <string>
 #include <mysql/mysql.h>
 
-namespace coco{
+namespace coco
+{
 
-class MysqlDB{
+class MysqlDB
+{
 public:
     MysqlDB(const std::string& host, const std::string& user, const std::string& passwd, 
             const std::string& db, const unsigned int& port=3306)

@@ -2,7 +2,8 @@
 #include <iostream>
 #include <stdlib.h>
 
-namespace coco{
+namespace coco
+{
 MysqlDB::~MysqlDB()
 {
     mysql_free_result(m_result);

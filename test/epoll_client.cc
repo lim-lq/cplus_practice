@@ -21,12 +21,12 @@ inline void print_err(const string& msg_err)
 int main(int argc, char* argv[])
 {
     sockaddr_in serverAddr;
-    string host = "192.168.200.128";
+    string host = "10.192.0.5";
     unsigned short port = 8000;
     istringstream iss;
 
     int opt = 0;
-    while ( (opt = getopt(argc, argv, "i:p:")) == -1 ) {
+    while ( (opt = getopt(argc, argv, "i:p:")) != -1 ) {
         switch ( opt ) {
         case 'i':
             host = optarg;
