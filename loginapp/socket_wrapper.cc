@@ -7,13 +7,15 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-#include <sys/epoll.h>
 #include <stdlib.h>
 
 namespace coco
 {
-int SocketWrapper::create_socket()
+int SocketWrapper::create_socket(const std::string& srvHost, const unsigned short& srvPort)
 {
+    m_host = srvHost;
+    m_port = srvPort;
+    
     sockaddr_in serverAddr;
     m_serverfd = socket(AF_INET, SOCK_STREAM, 0);
     if ( m_serverfd == -1 ) {
@@ -39,6 +41,12 @@ int SocketWrapper::create_socket()
     return 0;
 }
 
+void* SocketWrapper::proxy(void* arg)
+{
+    SocketWrapper* p_socketWrapper = (SocketWrapper*)arg;
+    p_socketWrapper->do_connect();
+}
+
 void SocketWrapper::do_connect()
 {
     m_epollfd = epoll_create(1);
@@ -49,23 +57,12 @@ void SocketWrapper::do_connect()
 
     char buf[1024];
     int maxEvents = 64;
-    epoll_event event;
-    std::tr1::shared_ptr<epoll_event> events((epoll_event*)calloc(maxEvents, sizeof(epoll_event)));
+    std::tr1::shared_ptr<epoll_event> events((epoll_event*)calloc(maxEvents, sizeof(epoll_event)), free);
+    // pthread_mutex_lock(&m_lock);
+    std::cout << "Begin epoll thread" << std::endl;
+    // pthread_mutex_unlock(&m_lock);
 
     while ( true ) {
-        pthread_mutex_lock(&m_lock);
-        if ( m_clients.empty() ) {
-            continue;
-        }
-        for ( std::map<int, ClientPtr>::iterator it = m_clients.begin(); it != m_clients.end(); ++it ) {
-            event.data.fd = it->first;
-            event.events = EPOLLIN | EPOLLET;
-            if ( epoll_ctl(m_epollfd, EPOLL_CTL_ADD, it->first, &event) != 0 ) {
-                print_err("Epoll_ctl client " + it->first);    
-            }
-        }
-        pthread_mutex_unlock(&m_lock);
-
         int ret = epoll_wait(m_epollfd, events.get(), maxEvents, 3000);
         if ( ret == 0 ) {
             continue;
@@ -94,26 +91,23 @@ void SocketWrapper::do_connect()
                               << "] failure, error code[" << errno << "]." << std::endl;
                     continue;
                 }
-                std::cout << "Recieve message(" << buf << ") from client["
+/*                std::cout << "Recieve message(" << buf << ") from client["
                           << m_clients[events.get()[i].data.fd]->get_client_host()
-                          << "]." << std::endl;
+                          << "]." << std::endl;*/
+                deal_request(buf, events.get()[i].data.fd);
             }
         }
     }
 }
 
-void* SocketWrapper::proxy(void* arg)
-{
-    SocketWrapper* p_socketWrapper = (SocketWrapper*)arg;
-    p_socketWrapper->do_connect();
-}
-
 void SocketWrapper::run()
 {
+    epoll_event event;
+    pthread_mutex_lock(&m_lock);
     std::cout << "Server is running at " << m_host << ":" << m_port << std::endl;
-
+    pthread_mutex_unlock(&m_lock);
     pthread_t tid;
-    if ( pthread_create(&tid, NULL, &proxy, this) != 0 ) {
+    if ( pthread_create(&tid, NULL, SocketWrapper::proxy, (void *)this) != 0 ) {
         print_err("Create epoll thread");
         close(m_serverfd);
         return;
@@ -128,11 +122,16 @@ void SocketWrapper::run()
             continue;
         }
         
+        std::cout << "Client [" << inet_ntoa(clientAddr.sin_addr) << "] connected!." << std::endl;
         pthread_mutex_lock(&m_lock);
         m_clients.insert(std::make_pair(clientfd, new Client(inet_ntoa(clientAddr.sin_addr), clientfd)));
+        event.data.fd = clientfd;
+        event.events = EPOLLIN | EPOLLET;
+        if ( epoll_ctl(m_epollfd, EPOLL_CTL_ADD, clientfd, &event) != 0 ) {
+            std::cout << "client file description is " << clientfd << std::endl;
+            print_err("Epoll_ctl");
+        }
         pthread_mutex_unlock(&m_lock);
-
-        std::cout << "Client [" << inet_ntoa(clientAddr.sin_addr) << "] connected!." << std::endl;
     }
 }
 }

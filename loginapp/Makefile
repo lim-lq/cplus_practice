@@ -1,9 +1,10 @@
-FILES := loginapp.cc main.cc
+FILES := loginapp.cc main.cc socket_wrapper.cc
 OBJ := loginapp
 LIBS := -lmysqlclient
+INCS := -I$(BOOST_ROOT)
 
 $(OBJ):
-	g++ $(FILES) $(LIBS) -o $(OBJ)
+	g++ $(FILES) $(INCS) $(LIBS) -o $(OBJ)
 	
 clean:
 	rm $(OBJ)

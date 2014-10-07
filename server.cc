@@ -9,16 +9,16 @@ namespace simplechat{
 
 ChatServer::ChatServer(const std::string& host, const unsigned short& port)
 {
-    sockaddr_in serverAddr;
+/*    sockaddr_in serverAddr;
 
     m_serverfd = socket(AF_INET, SOCK_STREAM, 0);
     if ( m_serverfd < 0 ) {
         print_err("Create socket");
         exit(1);
-    }
+    }*/
     m_host = host;
     m_port = port;
-    bzero(&serverAddr, sizeof(serverAddr));
+/*    bzero(&serverAddr, sizeof(serverAddr));
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
@@ -37,19 +37,19 @@ ChatServer::ChatServer(const std::string& host, const unsigned short& port)
     if ( listen(m_serverfd, 10) == -1 ) {
         print_err("Listen connect");
         exit(1);
-    }
+    }*/
 }
 
-ChatServer::~ChatServer()
+/*ChatServer::~ChatServer()
 {
     for ( std::vector<ConnectInfo::ClientInfo*>::iterator it = m_clientInfos.begin();
           it != m_clientInfos.end(); ++it ) {
         close((*it)->clientfd);
     }
-    close(m_serverfd);
-}
+    // close(m_serverfd);
+}*/
 
-void ChatServer::send_message(std::string& message, const std::string& clientIP)
+/*void ChatServer::send_message(std::string& message, const std::string& clientIP)
 {
     std::string new_message;
     //strip(message);
@@ -137,15 +137,17 @@ void ChatServer::start_thread(const ConnectInfo* p_connectinfo)
               << inet_ntoa(p_connectinfo->p_clientinfo->clientAddr.sin_addr)
               << "> connected. [ socket fd is " << p_connectinfo->p_clientinfo->clientfd << " ]\n";
 
-}
+}*/
 
 void ChatServer::wait()
 {
-    m_RUNSTATUS = true;
+/*    m_RUNSTATUS = true;
     sockaddr_in clientAddr;
-    socklen_t addrlen = sizeof(clientAddr);
+    socklen_t addrlen = sizeof(clientAddr);*/
+    pthread_mutex_lock(&m_lock);
     std::cout << "Server is running at " << m_host << ":" << m_port << std::endl;
-    while ( m_RUNSTATUS ) {
+    pthread_mutex_unlock(&m_lock);
+/*    while ( m_RUNSTATUS ) {
         int clientfd = accept(m_serverfd, (struct sockaddr*)&clientAddr, &addrlen);
         if ( clientfd == -1 ) {
             print_err("Accept connect");
@@ -155,6 +157,6 @@ void ChatServer::wait()
         connectinfo.p_clientinfo = new ConnectInfo::ClientInfo(clientfd, clientAddr);
         connectinfo._server = this;
         start_thread(&connectinfo);
-    }
+    }*/
 }
 }

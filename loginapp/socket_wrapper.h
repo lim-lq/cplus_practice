@@ -8,13 +8,21 @@
 #include <tr1/memory>
 #include <fcntl.h>
 #include <map>
+#include <sys/epoll.h>
 
 namespace coco
 {
 
 inline void print_err(std::string err_msg)
 {
-    std::cout << err_msg << " failure, error code[" << errno << "]." << std::endl; 
+    std::cout << err_msg << " failure, error code[" << errno << "]." << std::endl;
+    std::cout << "EBADF " << EBADF << std::endl;
+    std::cout << "EEXIST " << EEXIST << std::endl;
+    std::cout << "EINVAL " << EINVAL << std::endl;
+    std::cout << "ENOENT " << ENOENT << std::endl;
+    std::cout << "ENOMEM " << ENOMEM << std::endl;
+    std::cout << "ENOSPC " << ENOSPC << std::endl;
+    std::cout << "EPERM " << EPERM << std::endl;
 }
 
 class Client
@@ -42,10 +50,9 @@ typedef std::tr1::shared_ptr<Client> ClientPtr;
 class SocketWrapper
 {
 public:
-    SocketWrapper(std::string& host, unsigned short port) : m_host(host), m_port(port)
+    SocketWrapper()
     {
-        m_serverfd = -1;
-        m_runstatus = true;
+        pthread_mutex_init(&m_lock, NULL);
     }
     ~SocketWrapper()
     {
@@ -54,14 +61,14 @@ public:
         }
     }
 
-    int create_socket();
-    static void *proxy(void* arg);
+    
+    int create_socket(const std::string& srvHost, const unsigned short& srvPort);
     void run();
-
-protected:
     void do_connect();
+    virtual void deal_request(const std::string& msg, const int& clientfd) = 0;
 
 private:
+    static void *proxy(void* arg);
     std::string m_host;
     unsigned short m_port;
     int m_serverfd;

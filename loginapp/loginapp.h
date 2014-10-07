@@ -3,6 +3,7 @@
 
 #include <string>
 #include <mysql/mysql.h>
+#include "socket_wrapper.h"
 
 namespace coco
 {
@@ -29,14 +30,17 @@ private:
     unsigned int m_port;
 };
 
-class LoginApp{
+class LoginApp : public SocketWrapper {
 public:
     LoginApp(){
         m_mysqldb = NULL;
     }
     ~LoginApp(){}
     void Initmysql(MysqlDB* mysqldb);
+    void start_server(const std::string& srvHost, const unsigned short& srvPort);
     int login(const std::string& username, const std::string& passwd);
+    int addAccount(const std::string& username, const std::string& passwd);
+    void deal_request(const std::string& msg, const int& clientfd);
 private:
     MysqlDB *m_mysqldb;
 }; // end class LoginApp

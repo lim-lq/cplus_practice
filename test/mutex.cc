@@ -1,9 +1,16 @@
-#include "mutex.h"
 #include <iostream>
 #include <pthread.h>
+#include "mutex.h"
 
 namespace coco
 {
+MyMutex::MyMutex(const int& numberID)
+{
+    m_numberID = numberID;
+    pthread_mutex_init(&m_lock, NULL);
+    std::cout << "call Construct function and set the numberID to "
+              << m_numberID << "." << std::endl;
+}
 
 void *MyMutex::do_thread(void * arg)
 {
@@ -20,9 +27,9 @@ void MyMutex::run()
 {
     create_thread();
     sleep(3);
-    pthread_mutex_lock(&m_lock_lock);
+    pthread_mutex_lock(&m_lock);
     std::cout << "HAHAHA, I'm come in" << std::endl;
-    pthread_mutex_unlock(&m_lock_lock);
+    pthread_mutex_unlock(&m_lock);
 }
 
 }

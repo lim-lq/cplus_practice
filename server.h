@@ -11,7 +11,7 @@
 
 namespace simplechat{
 
-class ChatServer;
+// class ChatServer;
 struct ConnectInfo{
     struct ClientInfo{
         ClientInfo(const int& fd, const struct sockaddr_in& addr) : clientfd(fd), clientAddr(addr)
@@ -20,7 +20,7 @@ struct ConnectInfo{
         sockaddr_in clientAddr;       
     };
     ClientInfo* p_clientinfo;
-    ChatServer* _server;
+    // ChatServer* _server;
 };
 
 inline void strip(std::string& str)
@@ -43,20 +43,21 @@ inline void print_err(const std::string& msg)
 class ChatServer{
 public:
     ChatServer(const std::string& host, const unsigned short& port);
-    ~ChatServer();
+    ~ChatServer(){}
     void wait();
-    void start_thread(const ConnectInfo* p_connectinfo);
-    void do_connect(ConnectInfo::ClientInfo* p_clientinfo);
-    void send_message(std::string& message, const std::string& clientIP);
+    // void start_thread(const ConnectInfo* p_connectinfo);
+    // void do_connect(ConnectInfo::ClientInfo* p_clientinfo);
+    // void send_message(std::string& message, const std::string& clientIP);
 private:
-    static void* connect_proxy(void *ptr);
+    // static void* connect_proxy(void *ptr);
 
     std::string m_host;
     unsigned short m_port;
-    int m_serverfd;
-    bool m_RUNSTATUS;
-    pthread_mutex_t m_lock;
+    // int m_serverfd;
+    // bool m_RUNSTATUS;
+    
     std::vector<ConnectInfo::ClientInfo*> m_clientInfos;
+    pthread_mutex_t m_lock;
 }; 
 
 }

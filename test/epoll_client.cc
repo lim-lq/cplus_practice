@@ -10,12 +10,28 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <pthread.h>
 
 using namespace std;
 
 inline void print_err(const string& msg_err)
 {
     cout << msg_err << " failure, error code[" << errno << "]." << endl;
+}
+
+void *check_server(void *arg)
+{
+    int* p_serverfd = (int*)arg;
+    char buf[1024];
+
+    while ( true ) {
+        int ret = recv(*p_serverfd, buf, 1024, 0);
+        if ( ret == 0 ) {
+            cout << "Server connect has shutdown." << endl;
+            close(*p_serverfd);
+            exit(1);
+        }
+    }
 }
 
 int main(int argc, char* argv[])
@@ -26,7 +42,7 @@ int main(int argc, char* argv[])
     istringstream iss;
 
     int opt = 0;
-    while ( (opt = getopt(argc, argv, "i:p:")) != -1 ) {
+    while ( (opt = getopt(argc, argv, "i:p:h")) != -1 ) {
         switch ( opt ) {
         case 'i':
             host = optarg;
@@ -60,6 +76,12 @@ int main(int argc, char* argv[])
     if ( connect(serverfd, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1 ) {
         print_err("Connect server");
         close(serverfd);
+        exit(1);
+    }
+
+    pthread_t  tid;
+    if ( pthread_create(&tid, NULL, &check_server, &serverfd) != 0 ) {
+        print_err("Create pthread");
         exit(1);
     }
 
