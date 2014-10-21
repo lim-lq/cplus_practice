@@ -8,9 +8,15 @@
 #include <string>
 #include <errno.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <strings.h>
+#include <vector>
 
 using namespace std;
+
+vector<int> clientfds;
+pthread_mutex_t lock;
+pthread_mutex_init(&lock);
 
 inline void print_err(const string& err_msg)
 {
@@ -29,6 +35,11 @@ void set_nonblocking(const int& fd)
     flags = fcntl(fd, F_GETFL, 0);
     flags |= O_NONBLOCK;
     fcntl(fd, F_SETFL, flags);
+}
+
+void *do_connect(void *arg)
+{
+
 }
 
 int main(int argc, char* argv[])
@@ -62,64 +73,28 @@ int main(int argc, char* argv[])
     listen(serverfd, 10);
     socklen_t addrlen = sizeof(clientAddr);
     cout << "server running at " << host << ":" << port << "." << endl;
-    int clientfd = accept(serverfd, (sockaddr*)&clientAddr, &addrlen);
-    if ( clientfd == -1 ) {
-        print_err("Accept connect");
-        close(serverfd);
+/*    pthread_t tid;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);*/
+    int ret = 0;
+
+    if ( (ret = pthread_create(&tid, NULL, do_connect, NULL)) != 0 ) {
+        cout << "Create pthread failure, error code[" << ret << ".\n";
         exit(1);
     }
-    cout << "Connected by client[" << inet_ntoa(clientAddr.sin_addr) << "]." << endl;
-    set_nonblocking(clientfd);
-    // set epoll property
-    int epollfd;
-    int maxEvents = 64;
-    epoll_event event;
-    epoll_event* events;
-
-    event.data.fd = clientfd;
-    event.events = EPOLLIN | EPOLLET;
-    epollfd = epoll_create(1);
-
-    int ret = epoll_ctl(epollfd, EPOLL_CTL_ADD, clientfd, &event);
-    if ( ret == -1 ) {
-        print_err("Epoll control");
-        close(clientfd);
-        close(serverfd);
-        close(epollfd);
-        exit(1);
-    }
-    char buf[1024];
-    events = (epoll_event*)calloc(maxEvents, sizeof(epoll_event));
-
     while ( true ) {
-        int ret = epoll_wait(epollfd, events, maxEvents, -1);
-        if ( ret == -1 ) {
-            print_err("Epoll wait");
-            close(clientfd);
+        int clientfd = accept(serverfd, (sockaddr*)&clientAddr, &addrlen);
+        if ( clientfd == -1 ) {
+            print_err("Accept connect");
             close(serverfd);
-            close(epollfd);
             exit(1);
-        } else if ( ret == 0 ) {
-            cout << "No event" << endl;
-            continue;
         }
-
-        for ( int i = 0; i < ret; ++i ) {
-            if ( events[i].events & EPOLLIN ) {
-                bzero(buf, 1024);
-                int ret = recv(events[i].data.fd, buf, 1024, 0);
-                if ( ret == 0 ) {
-                    cout << "Connect shutdown..." << endl;
-                    close(events[i].data.fd);
-                    epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    continue;
-                } else if ( ret == -1 ) {
-                    print_err("Recieve message");
-                    continue;
-                }
-                cout << "Recieve message '" << buf << "'." << endl;
-            }
-        }
+        cout << "Client " << inet_ntoa(clientAddr.sin_addr)
+             << " connected" << endl;
+        pthread_mutex_lock(&lock);
+        clientfds.push_back(clientfd);
+        pthread_mutex_unlock(&lock);
     }
 
     return 0;
