@@ -31,6 +31,11 @@ int ClientApp::run(int argc, char* argv[])
         cout << *it << endl;
     }
     cout << "Down load file " << downloadfile << ".\n";
+    std::string line;
+    while ( std::getline(cin, line) ) {
+        cout << "Upload file " << line << ".\n";
+        fileprx->uploadfile(line);
+    }
     return 0;
 }
 /*#include <Ice/Ice.h>

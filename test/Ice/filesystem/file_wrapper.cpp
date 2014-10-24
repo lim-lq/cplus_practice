@@ -12,6 +12,7 @@ namespace blond
 
 void FileWrapper::uploadfile(const std::string& file, const ::Ice::Current& current)
 {
+    m_queue.put(file);
     std::cout << "I'm in uploadfile" << std::endl;
 }
 
@@ -23,5 +24,11 @@ void FileWrapper::uploadfile(const std::string& file, const ::Ice::Current& curr
     files.push_back("daishu");
 
     return files;
+}
+
+void FileWrapper::startConsumerThread()
+{
+    m_consumer = new Consumer(&m_queue);
+    m_consumer->start();
 }
 }

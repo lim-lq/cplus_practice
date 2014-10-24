@@ -102,8 +102,8 @@ int main(int argc, char* argv[])
     sockaddr_in serverAddr;
     int serverfd;
 
-    string host = "0.0.0.0";
-    unsigned short port = 8000;
+    string host = "10.192.0.5";
+    unsigned short port = 0;
 
     serverfd = socket(AF_INET, SOCK_STREAM, 0);
     if ( serverfd == -1 ) {

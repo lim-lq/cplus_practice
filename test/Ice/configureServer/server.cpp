@@ -24,9 +24,11 @@ int main(int argc, char* argv[])
 int WorkerApp::run(int argc, char* argv[])
 {
     Ice::ObjectAdapterPtr adapter = communicator()->createObjectAdapter("configureServerInterface");
-    Blond::ConfigureServerInterfacePtr conServer = new blond::ConfigureWrapper;
+    blond::ConfigureWrapper* conServerPtr = new blond::ConfigureWrapper;
+    Blond::ConfigureServerInterfacePtr conServer = conServerPtr;
     adapter->add(conServer, communicator()->stringToIdentity("configureServer"));
     adapter->activate();
+    conServerPtr->startConnectThread();
     cout << "Configure server running." << endl;
     communicator()->waitForShutdown();
     return 0;

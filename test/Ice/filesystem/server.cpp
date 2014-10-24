@@ -1,6 +1,6 @@
-#include "file_wrapper.h"
 #include <iostream>
 #include <Ice/Ice.h>
+#include "file_wrapper.h"
 
 using namespace std;
 
@@ -22,9 +22,11 @@ int FileApp::run(int argc, char* argv[])
 
     Ice::ObjectAdapterPtr adapter = communicator()->createObjectAdapter("FileSystem");
     blond::FileWrapper* fileWrapper = new blond::FileWrapper();
+    fileWrapper->startConsumerThread();
     Blond::FileInterfacePtr filePtr = fileWrapper;
     adapter->add(filePtr, communicator()->stringToIdentity("file"));
     adapter->activate();
+    
 
     communicator()->waitForShutdown();
     return 0;

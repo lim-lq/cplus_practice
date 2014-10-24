@@ -1,7 +1,7 @@
-srvFILES := server.cpp file_wrapper.cpp fileInterface.cpp
+srvFILES := server.cpp file_wrapper.cpp fileInterface.cpp consumer.cpp
 cliFILES := client.cpp fileInterface.cpp
 LIBS := -lIce -lIceUtil
-INCDIR := -I. -I/home/liqing/build_fengyi/fengyi/external/ice/include
+INCDIR := -I. -I/home/liqing/software/Ice-3.5.0/cpp/include
 LIBDIR := -L/home/liqing/software/Ice-3.5.0/cpp/lib
 srvOBJ := server
 cliOBJ := client
