@@ -6,29 +6,27 @@
 #ifndef __ENDPOINT_H__
 #define __ENDPOINT_H__
 
-#include <iostream>
 #include <stdint.h>
 #include <string>
+#include <errno.h>
+#include <netinet/in.h>
 
-namespace wind{
-
-inline void print_err(const std::string& msg)
+namespace wind
 {
-    std::cout << msg << "failure, error code is[" << errno << "]." << endl;
-}
 
 class EndPoint{
 public:
-    EndPoint(const std::string& host, const unsigned short& port);
-    ~EndPoint()
-    {
-        close(m_serverfd);
-    }
+    EndPoint();
+    ~EndPoint();
+
+    int bind(const std::string& host, const unsigned short& port);
+    int accept(sockaddr_in& clientAddr);
     int listen(const uint32_t& listen_num);
     int send(const std::string& message);
-    std::string recv();
+    int recv(char* buf, const uint32_t size);
 private:
     int m_serverfd;
+    int m_clientfd;
     std::string m_host;
     unsigned short m_port;
 };
