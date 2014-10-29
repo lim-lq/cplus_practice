@@ -9,8 +9,13 @@
 #include <tr1/memory>
 #include <vector>
 
+#include "queue.hpp"
+
 namespace wind
 {
+
+typedef std::string Task;
+
 class Thread
 {
 public:
@@ -64,25 +69,31 @@ public:
         std::cout << "Thread - " << m_id << " was been destroyed." << std::endl;
     }
     void run();
-    void assign_task(const std::string& task);
+    void assign_task(const Task& task);
     bool isBusy()
     {
         return m_IsUsed;
     }
 private:
-    std::string m_task;
+    Task m_task;
     bool m_IsUsed;
     int m_id;
 }; // end class WorkThread
 
-class ThreadPool
+class ThreadPool : public Thread
 {
 public:
     ThreadPool();
     ~ThreadPool();
+
+    virtual void run();
+
+    int getWorkThread();
     void create(const uint32_t thread_num = 10);
-    int push_task(const std::string& task);
+    void push_task(const Task& task);
+
 private:
+    Queue<Task> m_taskQueue;
     std::vector<std::tr1::shared_ptr<WorkThread> > m_threads;
 }; // end class ThreadPool
 

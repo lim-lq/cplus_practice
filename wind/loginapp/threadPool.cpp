@@ -36,7 +36,7 @@ void WorkThread::run()
     }
 }
 
-void WorkThread::assign_task(const std::string& task)
+void WorkThread::assign_task(const Task& task)
 {
     LOCK();
     m_task = task;
@@ -55,6 +55,28 @@ ThreadPool::~ThreadPool()
 
 }
 
+void ThreadPool::run()
+{
+    while ( true ) {
+        Task task = m_taskQueue.get();
+        int thread_id;
+        while ( (thread_id = getWorkThread()) == -1 ) {
+        }
+        m_threads[thread_id]->assign_task(task);
+    }
+}
+
+int ThreadPool::getWorkThread()
+{
+    int thread_size = m_threads.size();
+    for ( int i = 0; i < thread_size; ++i ) {
+        if ( !m_threads[i]->isBusy() ){
+            return i;
+        }
+    }
+    return -1;
+}
+
 void ThreadPool::create(const uint32_t thread_num)
 {
     for ( uint32_t i = 0; i < thread_num; ++i ) {
@@ -67,23 +89,9 @@ void ThreadPool::create(const uint32_t thread_num)
     }
 }
 
-int ThreadPool::push_task(const std::string& task)
+void ThreadPool::push_task(const Task& task)
 {
-    int thread_size = m_threads.size();
-    int i = 0;
-    for ( ; i < thread_size; ++i ) {
-        if ( m_threads[i]->isBusy() ) {
-            continue;
-        }
-        m_threads[i]->assign_task(task);
-        std::cout << "Assign task [" << task << "] to thread " << i << std::endl;
-        // sleep(1);
-        break;
-    }
-    if ( i >= thread_size ) {
-        std::cout << "All threads are busy, please wait a minite to push task." << std::endl;
-    }
-    return 0;
+    m_taskQueue.put(task);
 }
 
 } // end namespace wind

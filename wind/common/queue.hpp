@@ -49,6 +49,10 @@ public:
         m_queue.pop_front();
         return item;
     }
+
+    bool empty() {
+        return m_queue.empty();
+    }
 private:
     bool IsEmpty;
     std::list<T> m_queue;
