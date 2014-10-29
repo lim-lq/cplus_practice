@@ -1,0 +1,48 @@
+#include <iostream>
+#include <tr1/memory>
+#include "../endpoint.h"
+#include "log.hpp"
+#include "utils.hpp"
+
+using namespace std;
+using namespace wind;
+
+int main(int argc, char* argv[])
+{
+    std::tr1::shared_ptr<EndPoint> endpoint(new EndPoint);
+
+    string host = "10.192.0.5";
+    unsigned short port = 8000;
+
+    wind::common::LoggerInitialize("test.log");
+
+    endpoint->bind(host, port);
+    endpoint->listen(10);
+    cout << "Server running at " << host << ":" << port << "." << endl;
+    LOG4CPLUS_INFO(LOGGER, "Server running at " << host << ":" << port << ".");
+    while ( true ) {
+        sockaddr_in clientAddr;
+        int ret = endpoint->accept(clientAddr);
+        if ( ret == -1 ) {
+            print_error("Accept client connection");
+            exit(1);
+        }
+        cout << "Connect success." << endl;
+        char buf[2048];
+        ret = endpoint->recv(buf, 2048);
+        if ( ret == 0 ) {
+            cout << "Client shutdown the connection." << endl;
+        } else if ( ret == -1 ) {
+            cout << "Recieve message error." << endl;
+        }
+        ret = endpoint->send("nidaye");
+        if ( ret > 0 ) {
+            cout << "Send message success." << endl;
+        } else {
+            cout << "Send message failure." << endl;
+            return -1;
+        }
+        break;
+    }
+    return 0;
+}
