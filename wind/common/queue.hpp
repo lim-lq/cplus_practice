@@ -1,3 +1,10 @@
+/*
+ * 2014-10-30
+ * author: blond.li
+ * description: A simple queue complement
+ * version: 1.0
+ */
+
 #ifndef __QUEUE_HPP__
 #define __QUEUE_HPP__
 
