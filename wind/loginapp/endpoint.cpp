@@ -59,14 +59,38 @@ int EndPoint::accept(sockaddr_in& clientAddr)
     return clientfd;
 }
 
+int EndPoint::connect(const std::string& host, const uint16_t& port)
+{
+    sockaddr_in serverAddr;
+    bzero(&serverAddr, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
+    serverAddr.sin_port = htons(port);
+
+    m_host = host;
+    m_port = port;
+
+    return ::connect(m_serverfd, (sockaddr*)&serverAddr, sizeof(serverAddr));
+}
+
 int EndPoint::send(const int& clientfd, const std::string& message)
 {
     return ::send(clientfd, message.c_str(), message.size(), 0);
 }
 
-int EndPoint::recv(const int& clientfd, char* buf, const uint32_t size)
+int EndPoint::send(const std::string& message)
+{
+    return ::send(m_serverfd, message.c_str(), message.size(), 0);
+}
+
+int EndPoint::recv(const int& clientfd, char* buf, const uint32_t& size)
 {
     return ::recv(clientfd, buf, size, 0);
+}
+
+int EndPoint::recv(char* buf, const uint32_t& size)
+{
+    return ::recv(m_serverfd, buf, size, 0);
 }
 
 } // end namespace wind

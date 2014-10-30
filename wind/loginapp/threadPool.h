@@ -77,7 +77,7 @@ public:
     void create(const uint32_t thread_num = 10)
     {
         for ( uint32_t i = 0; i < thread_num; ++i ) {
-            std::tr1::shared_ptr<const Work> thread(new Work(i));
+            std::tr1::shared_ptr<Work> thread(new Work(i));
             m_threads.push_back(thread);
         }
         for ( typename std::vector<std::tr1::shared_ptr<Work> >::iterator it = m_threads.begin();

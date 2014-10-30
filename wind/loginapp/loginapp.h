@@ -51,12 +51,12 @@ class LoginApp
 public:
     LoginApp(const std::string& host, const uint16_t& port);
     ~LoginApp(){}
-    // void run();
+    void run();
 private:
     std::string m_host;
     uint16_t m_port;
     EndPoint m_endpoint;
-/*    ThreadPool<WorkThread, Task> m_threadpool;*/
+    ThreadPool<WorkThread, Task> m_threadpool;
 }; // end class LoginApp
 } // end namespace wind
 

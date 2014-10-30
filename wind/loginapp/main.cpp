@@ -34,10 +34,10 @@ int main(int argc, char* argv[])
     }
 
     wind::common::LoggerInitialize("loginapp.log");
-    ThreadPool<WorkThread, Task> threadpool;
-    threadpool.run();
+/*    ThreadPool<WorkThread, Task> threadpool;
+    threadpool.run();*/
     LoginApp app(host, port);
-/*    app.run();*/
+    app.run();
 
     return 0;
 }

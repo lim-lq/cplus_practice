@@ -2,6 +2,7 @@
 #include "log.hpp"
 
 #include <errno.h>
+#include <strings.h>
 #include <arpa/inet.h>
 
 #include <stdexcept>
@@ -17,7 +18,30 @@ void WorkThread::run()
         std::cout << "I'm the thread " << m_id << std::endl;
         std::cout << "And I get the task [" << m_task.fd << " "
                   << m_task.host << " " << m_task.port << "]." << std::endl;
-        sleep(2);
+        char buf[2048];
+        while ( true ) {
+            bzero(buf, 2048);
+            int ret = ::recv(m_task.fd, buf, 2048, 0);
+            if ( ret == 0 ) {
+                LOG4CPLUS_INFO(LOGGER, "The client " << m_task.host
+                                        << ":" << m_task.port << " has shutdown the connection");
+                close(m_task.fd);
+                bzero(&m_task, sizeof(m_task));
+                break;
+            } else if ( ret == -1 ) {
+                LOG4CPLUS_INFO(LOGGER, "Recieve message from client "
+                                        << m_task.host << ":" << m_task.port
+                                        << " error.");
+                close(m_task.fd);
+                bzero(&m_task, sizeof(m_task));
+                break;
+            }
+
+            LOG4CPLUS_INFO(LOGGER, "Recieve message "
+                                    << buf << " from client"
+                                    << m_task.host << ":"
+                                    << m_task.port);
+        }
         m_IsUsed = false;
     }
 }
@@ -43,13 +67,14 @@ LoginApp::LoginApp(const std::string& host, const uint16_t& port) : m_host(host)
     ret = m_endpoint.listen(10);
 
     LOG4CPLUS_INFO(LOGGER, "Initialize loginapp success.");
-/*    // initialize thread pool
+    // initialize thread pool
     m_threadpool.create(100);
-    m_threadpool.run();*/
+    m_threadpool.start();
 }
 
-/*void LoginApp::run()
+void LoginApp::run()
 {
+    LOG4CPLUS_INFO(LOGGER, "Login App running.");
     while ( true ) {
         sockaddr_in clientAddr;
         int clientfd = m_endpoint.accept(clientAddr);
@@ -63,6 +88,6 @@ LoginApp::LoginApp(const std::string& host, const uint16_t& port) : m_host(host)
         Task task(clientfd, ::inet_ntoa(clientAddr.sin_addr), ::ntohs(clientAddr.sin_port));
         m_threadpool.push_task(task);
     }
-}*/
+}
 
 } // end namespace wind
