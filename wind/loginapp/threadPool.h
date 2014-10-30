@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <string>
@@ -13,8 +14,6 @@
 
 namespace wind
 {
-
-typedef std::string Task;
 
 class Thread
 {
@@ -58,43 +57,57 @@ private:
     pthread_cond_t m_cond;
 }; // end class Thread
 
-class WorkThread : public Thread
-{
-public:
-    WorkThread(int id) : m_IsUsed(false), m_id(id)
-    {
-    }
-    ~WorkThread()
-    {
-        std::cout << "Thread - " << m_id << " was been destroyed." << std::endl;
-    }
-    void run();
-    void assign_task(const Task& task);
-    bool isBusy()
-    {
-        return m_IsUsed;
-    }
-private:
-    Task m_task;
-    bool m_IsUsed;
-    int m_id;
-}; // end class WorkThread
-
+template <typename Work, typename Task>
 class ThreadPool : public Thread
 {
 public:
-    ThreadPool();
-    ~ThreadPool();
+    ThreadPool(){}
+    ~ThreadPool(){}
 
-    virtual void run();
+    int getWorkThread()
+    {
+        int thread_size = m_threads.size();
+        for ( int i = 0; i < thread_size; ++i ) {
+            if ( !m_threads[i]->isBusy() ){
+                return i;
+            }
+        }
+        return -1;
+    }
+    void create(const uint32_t thread_num = 10)
+    {
+        for ( uint32_t i = 0; i < thread_num; ++i ) {
+            std::tr1::shared_ptr<const Work> thread(new Work(i));
+            m_threads.push_back(thread);
+        }
+        for ( typename std::vector<std::tr1::shared_ptr<Work> >::iterator it = m_threads.begin();
+              it != m_threads.end(); ++it ) {
+            (*it)->start();
+        }        
+    }
+    void push_task(const Task& task)
+    {
+        if ( m_threads.size() == 0 ) {
+            std::cout << "There is no work thread, please create it first." << std::endl;
+            exit(1);
+        }
+        m_taskQueue.put(task);
+    }
 
-    int getWorkThread();
-    void create(const uint32_t thread_num = 10);
-    void push_task(const Task& task);
+    void run()
+    {
+        while ( true ) {
+            Task task = m_taskQueue.get();
+            int thread_id;
+            while ( (thread_id = getWorkThread()) == -1 ) {
+            }
+            m_threads[thread_id]->assign_task(task);
+        }
+    }
 
 private:
     Queue<Task> m_taskQueue;
-    std::vector<std::tr1::shared_ptr<WorkThread> > m_threads;
+    std::vector<std::tr1::shared_ptr<Work> > m_threads;
 }; // end class ThreadPool
 
 } // end namespace wind

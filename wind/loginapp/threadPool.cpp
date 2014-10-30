@@ -6,6 +6,9 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+#include <stdlib.h>
+
 #include "threadPool.h"
 
 namespace wind
@@ -23,50 +26,14 @@ void Thread::start()
     }
 }
 
-void WorkThread::run()
+/*template <typename Work, typename Task>
+void ThreadPool<Work, Task>::run()
 {
-    while ( true ) {
-        LOCK();
-        wait();
-        UNLOCK();
-        std::cout << "I'm the thread " << m_id << std::endl;
-        std::cout << "And I get the task [" << m_task << "]." << std::endl;
-        sleep(20);
-        m_IsUsed = false;
-    }
-}
+    std::cout << "I'm the run function." << std::endl;
+}*/
 
-void WorkThread::assign_task(const Task& task)
-{
-    LOCK();
-    m_task = task;
-    m_IsUsed = true;
-    signal();
-    UNLOCK();
-}
-
-ThreadPool::ThreadPool()
-{
-
-}
-
-ThreadPool::~ThreadPool()
-{
-
-}
-
-void ThreadPool::run()
-{
-    while ( true ) {
-        Task task = m_taskQueue.get();
-        int thread_id;
-        while ( (thread_id = getWorkThread()) == -1 ) {
-        }
-        m_threads[thread_id]->assign_task(task);
-    }
-}
-
-int ThreadPool::getWorkThread()
+/*template <typename Work, typename Task>
+int ThreadPool<Work, Task>::getWorkThread()
 {
     int thread_size = m_threads.size();
     for ( int i = 0; i < thread_size; ++i ) {
@@ -77,21 +44,27 @@ int ThreadPool::getWorkThread()
     return -1;
 }
 
-void ThreadPool::create(const uint32_t thread_num)
+template <typename Work, typename Task>
+void ThreadPool<Work, Task>::create(const uint32_t thread_num)
 {
     for ( uint32_t i = 0; i < thread_num; ++i ) {
-        std::tr1::shared_ptr<WorkThread> thread(new WorkThread(i));
+        std::tr1::shared_ptr<const Work> thread(new Work(i));
         m_threads.push_back(thread);
     }
-    for ( std::vector<std::tr1::shared_ptr<WorkThread> >::iterator it = m_threads.begin();
+    for ( typename std::vector<std::tr1::shared_ptr<Work> >::iterator it = m_threads.begin();
           it != m_threads.end(); ++it ) {
         (*it)->start();
     }
 }
 
-void ThreadPool::push_task(const Task& task)
+template <typename Work, typename Task>
+void ThreadPool<Work, Task>::push_task(const Task& task)
 {
+    if ( m_threads.size() == 0 ) {
+        std::cout << "There is no work thread, please create it first." << std::endl;
+        exit(1);
+    }
     m_taskQueue.put(task);
-}
+}*/
 
 } // end namespace wind

@@ -22,11 +22,10 @@ public:
     int bind(const std::string& host, const unsigned short& port);
     int accept(sockaddr_in& clientAddr);
     int listen(const uint32_t& listen_num);
-    int send(const std::string& message);
-    int recv(char* buf, const uint32_t size);
+    int send(const int& clientfd, const std::string& message);
+    int recv(const int& clientfd, char* buf, const uint32_t size);
 private:
     int m_serverfd;
-    int m_clientfd;
     std::string m_host;
     unsigned short m_port;
 };

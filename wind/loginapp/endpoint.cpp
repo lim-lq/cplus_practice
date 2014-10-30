@@ -19,11 +19,17 @@ namespace wind
 EndPoint::EndPoint()
 {
     m_serverfd = 0;
-    m_clientfd = 0;
     m_serverfd = ::socket(AF_INET, SOCK_STREAM, 0);
     if ( m_serverfd == -1 ) {
         print_error("Create socket");
         exit(1);
+    }
+}
+
+EndPoint::~EndPoint()
+{
+    if ( m_serverfd > 0 ) {
+        close(m_serverfd);
     }
 }
 
@@ -49,18 +55,18 @@ int EndPoint::accept(sockaddr_in& clientAddr)
 {
     socklen_t addrlen = sizeof(clientAddr);
 
-    m_clientfd = ::accept(m_serverfd, (sockaddr*)&clientAddr, &addrlen);
-    return m_clientfd;
+    int clientfd = ::accept(m_serverfd, (sockaddr*)&clientAddr, &addrlen);
+    return clientfd;
 }
 
-int EndPoint::send(const std::string& message)
+int EndPoint::send(const int& clientfd, const std::string& message)
 {
-    return ::send(m_clientfd, message.c_str(), message.size(), 0);
+    return ::send(clientfd, message.c_str(), message.size(), 0);
 }
 
-int EndPoint::recv(char* buf, const uint32_t size)
+int EndPoint::recv(const int& clientfd, char* buf, const uint32_t size)
 {
-    return ::recv(m_clientfd, buf, size, 0);
+    return ::recv(clientfd, buf, size, 0);
 }
 
 } // end namespace wind
