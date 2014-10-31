@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 
+#include <boost/thread/detail/singleton.hpp>
 
 namespace wind
 {
@@ -89,6 +90,8 @@ std::ostream& operator << (std::ostream& os, ConfigureParser& config)
     }
     return os;
 }
+
+typedef boost::detail::thread::singleton<ConfigureParser> SingletonConfigureParser;
 
 } // end namespace wind
 #endif

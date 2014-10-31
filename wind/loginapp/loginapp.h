@@ -40,7 +40,10 @@ public:
     {
         return m_IsUsed;
     }
+    static void setDBmgr(const std::string& host, const uint16_t& port);
 private:
+    static std::string m_dbmgrHost;
+    static uint16_t m_dbmgrPort; 
     Task m_task;
     bool m_IsUsed;
     int m_id;

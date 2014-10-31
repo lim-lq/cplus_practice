@@ -9,6 +9,16 @@
 
 namespace wind
 {
+
+static std::string WorkThread::m_dbmgrHost = "";
+static uint16_t WorkThread::m_dbmgrPort = 0;
+
+static void setDBmgr(const std::string& host, const uint16_t& port)
+{
+    m_dbmgrHost = host;
+    m_dbmgrPort = port;
+}
+
 void WorkThread::run()
 {
     while ( true ) {
