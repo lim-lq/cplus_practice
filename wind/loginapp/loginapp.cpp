@@ -37,8 +37,8 @@ void WorkThread::run()
                 break;
             }
 
-            LOG4CPLUS_INFO(LOGGER, "Recieve message "
-                                    << buf << " from client"
+            LOG4CPLUS_INFO(LOGGER, "Recieve message ["
+                                    << buf << "] from client "
                                     << m_task.host << ":"
                                     << m_task.port);
         }
