@@ -27,13 +27,9 @@ typedef ClientInfo Task;
 class WorkThread : public Thread
 {
 public:
-    WorkThread(int id) : m_IsUsed(false), m_id(id)
-    {
-    }
-    ~WorkThread()
-    {
-        std::cout << "Thread - " << m_id << " was been destroyed." << std::endl;
-    }
+    WorkThread(const int& m_id);
+    ~WorkThread();
+
     void run();
     void assign_task(const Task& task);
     bool isBusy()
@@ -43,10 +39,12 @@ public:
     static void setDBmgr(const std::string& host, const uint16_t& port);
 private:
     static std::string m_dbmgrHost;
-    static uint16_t m_dbmgrPort; 
+    static uint16_t m_dbmgrPort;
     Task m_task;
     bool m_IsUsed;
+    bool m_IsExit;
     int m_id;
+    EndPoint m_dbmgr;
 }; // end class WorkThread
 
 class LoginApp

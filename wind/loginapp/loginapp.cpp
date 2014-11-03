@@ -1,22 +1,36 @@
 #include "loginapp.h"
 #include "log.hpp"
 
+#include <string.h>
 #include <errno.h>
 #include <strings.h>
 #include <arpa/inet.h>
 
 #include <stdexcept>
+#include <iostream>
 
 namespace wind
 {
+std::string WorkThread::m_dbmgrHost = "";
+uint16_t WorkThread::m_dbmgrPort = 0;
 
-static std::string WorkThread::m_dbmgrHost = "";
-static uint16_t WorkThread::m_dbmgrPort = 0;
-
-static void setDBmgr(const std::string& host, const uint16_t& port)
+void WorkThread::setDBmgr(const std::string& host, const uint16_t& port)
 {
     m_dbmgrHost = host;
     m_dbmgrPort = port;
+}
+
+WorkThread::WorkThread(const int& id) :
+            m_dbmgr(EndPoint(WorkThread::m_dbmgrHost, WorkThread::m_dbmgrPort))
+{
+    m_IsUsed = false;
+    m_IsExit = false;
+    m_id = id;
+}
+
+WorkThread::~WorkThread()
+{
+    std::cout << "Thread - " << m_id << " was been destroyed." << std::endl;
 }
 
 void WorkThread::run()
@@ -52,6 +66,48 @@ void WorkThread::run()
                                     << m_task.host << ":"
                                     << m_task.port);
         }
+        int ret = m_dbmgr.connect();
+        if ( ret == -1 ) {
+            LOG4CPLUS_ERROR(LOGGER, "Connect dbmgr server failure"
+                                    << ", error code is [" << errno << "] -- "
+                                    << " Worker-" << m_id);
+            m_IsExit = true;
+            return;
+        }
+
+        ret = m_dbmgr.send(buf);
+        if ( ret == -1 ) {
+            LOG4CPLUS_ERROR(LOGGER, "Send message to dbmgr server failure"
+                                    << ", error code is [" << errno << "] -- "
+                                    << " Worker-" << m_id);
+            m_IsExit = true;
+            return;            
+        }
+
+        ret = m_dbmgr.recv(buf, 2048);
+
+        if ( ret == -1 ) {
+            LOG4CPLUS_ERROR(LOGGER, "Recieve message from dbmgr server failure"
+                                    << ", error code is [" << errno << "] -- "
+                                    << " Worker-" << m_id);
+            m_IsExit = true;
+            return;
+        } else if ( ret == 0 ) {
+            LOG4CPLUS_ERROR(LOGGER, "Dbmgr server has shutdown.");
+            m_IsExit = true;
+            return;
+        }
+
+        ret = ::send(m_task.fd, buf, strlen(buf), 0);
+        if ( ret == -1 ) {
+            LOG4CPLUS_ERROR(LOGGER, "Send to client " << m_task.host
+                                    << ":" << m_task.port
+                                    << "failure, error code is ["
+                                    << errno << "]");
+            m_IsExit = true;
+            return;
+        }
+
         m_IsUsed = false;
     }
 }
@@ -65,10 +121,11 @@ void WorkThread::assign_task(const Task& task)
     UNLOCK();
 }
 
-LoginApp::LoginApp(const std::string& host, const uint16_t& port) : m_host(host), m_port(port)
+LoginApp::LoginApp(const std::string& host, const uint16_t& port) :
+                   m_host(host), m_port(port), m_endpoint(EndPoint(host, port))
 {
     // initialize socket
-    int ret = m_endpoint.bind(host, port);
+    int ret = m_endpoint.bind();
     if ( ret == -1 ) {
         LOG4CPLUS_ERROR(LOGGER, "Bind socket " << host << ":" << port
                                 << " failure, error code is [" << errno << "]");
@@ -85,6 +142,7 @@ LoginApp::LoginApp(const std::string& host, const uint16_t& port) : m_host(host)
 void LoginApp::run()
 {
     LOG4CPLUS_INFO(LOGGER, "Login App running.");
+    std::cout << "Login App runing." << std::endl;
     while ( true ) {
         sockaddr_in clientAddr;
         int clientfd = m_endpoint.accept(clientAddr);

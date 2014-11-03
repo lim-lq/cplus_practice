@@ -16,7 +16,7 @@
 namespace wind
 {
 
-EndPoint::EndPoint()
+EndPoint::EndPoint(const std::string& host, const uint16_t& port)
 {
     m_serverfd = 0;
     m_serverfd = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -24,6 +24,8 @@ EndPoint::EndPoint()
         print_error("Create socket");
         exit(1);
     }
+    m_host = host;
+    m_port = port;
 }
 
 EndPoint::~EndPoint()
@@ -33,15 +35,13 @@ EndPoint::~EndPoint()
     }
 }
 
-int EndPoint::bind(const std::string& host, const unsigned short& port)
+int EndPoint::bind()
 {
-    m_host = host;
-    m_port = port;
     sockaddr_in serverAddr;
     bzero(&serverAddr, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
-    serverAddr.sin_port = htons(port);
+    serverAddr.sin_addr.s_addr = inet_addr(m_host.c_str());
+    serverAddr.sin_port = htons(m_port);
 
     return ::bind(m_serverfd, (sockaddr*)&serverAddr, sizeof(serverAddr));
 }
@@ -59,16 +59,13 @@ int EndPoint::accept(sockaddr_in& clientAddr)
     return clientfd;
 }
 
-int EndPoint::connect(const std::string& host, const uint16_t& port)
+int EndPoint::connect()
 {
     sockaddr_in serverAddr;
     bzero(&serverAddr, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
-    serverAddr.sin_port = htons(port);
-
-    m_host = host;
-    m_port = port;
+    serverAddr.sin_addr.s_addr = inet_addr(m_host.c_str());
+    serverAddr.sin_port = htons(m_port);
 
     return ::connect(m_serverfd, (sockaddr*)&serverAddr, sizeof(serverAddr));
 }
