@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <mysql/mysql.h>
 
+#include <iostream>
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -13,6 +14,8 @@ namespace wind
 {
 
 typedef std::vector<std::map<std::string, std::string> > MYSQL_RESULT;
+
+std::ostream& operator<<(std::ostream& os, const MYSQL_RESULT& result);
 
 class MysqlDB{
 public:

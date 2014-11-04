@@ -42,7 +42,7 @@ public:
     ~ThreadPool();
     void LOCK();
     void UNLOCK();
-    void create(const int& num=10);
+    void create(const int& num=100);
     int addTask(Task* task);
     void moveToFreeList(Thread* thread);
 private:

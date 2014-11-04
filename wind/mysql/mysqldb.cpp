@@ -57,4 +57,15 @@ const char* MysqlDB::error()
     return ::mysql_error(&m_connection);
 }
 
+std::ostream& operator<<(std::ostream& os, const MYSQL_RESULT& result)
+{
+    for ( MYSQL_RESULT::const_iterator it = result.begin(); it != result.end(); ++it ) {
+        for ( std::map<std::string, std::string>::const_iterator mit = it->begin(); mit != it->end(); ++mit ) {
+            os << "--------------------------------------" << '\n';
+            os << mit->first << "\t" << mit->second << '\n';
+        }
+    }
+    return os;
+}
+
 } // end namespace wind
