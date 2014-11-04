@@ -64,6 +64,10 @@ void LoginTask::run()
         return;            
     }
 
+    LOG4CPLUS_INFO(LOGGER, "Send message " << buf << " to dbmgr"
+                            << " " << m_dbmgr.getHost() << ":"
+                            << m_dbmgr.getPort());
+
     ret = m_dbmgr.recv(buf, 2048);
 
     if ( ret == -1 ) {
