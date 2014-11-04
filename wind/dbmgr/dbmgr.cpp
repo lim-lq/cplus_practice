@@ -88,6 +88,8 @@ DBmgr::DBmgr(const std::string& host, const uint16_t& port) : m_endpoint(EndPoin
         throw std::runtime_error("Bind socket failure");
     }
 
+    m_endpoint.listen(10);
+
     ConfigureParser& config = SingletonConfigureParser::instance();
 
     int size;
@@ -104,6 +106,8 @@ DBmgr::DBmgr(const std::string& host, const uint16_t& port) : m_endpoint(EndPoin
 void DBmgr::run()
 {
     sockaddr_in clientAddr;
+    std::cout << "DBmgr server running at " << m_endpoint.getHost()
+                            << ":" << m_endpoint.getPort();
     LOG4CPLUS_INFO(LOGGER, "DBmgr server running at " << m_endpoint.getHost()
                             << ":" << m_endpoint.getPort());
     while ( true ) {
