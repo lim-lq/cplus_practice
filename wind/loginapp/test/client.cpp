@@ -46,8 +46,13 @@ int main(int argc, char* argv[])
                             << ":" << port << " failure, error code is[" << errno << "]");
         return -1;
     }
-
-    ret = endpoint.send("I'm a client");
+    /*
+     * 消息字段定义
+     * method\tdata
+     * login    user passwd
+     * register user passwd
+     */
+    ret = endpoint.send("login\tliqing 123");
 
     if ( ret == -1 ) {
         LOG4CPLUS_INFO(LOGGER, "Send message to server "

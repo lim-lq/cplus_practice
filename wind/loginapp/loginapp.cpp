@@ -79,6 +79,8 @@ void LoginTask::run()
         return;
     }
 
+    LOG4CPLUS_INFO(LOGGER, "Recieve message [" << buf << "] from dbmgr server");
+
     ret = m_client.send(buf);
     if ( ret == -1 ) {
         LOG4CPLUS_ERROR(LOGGER, "Send to client " << m_client.getHost()

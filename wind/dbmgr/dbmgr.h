@@ -7,6 +7,9 @@
 
 #include <string>
 
+#define ERROR_FORMAT    "error\tthe message format is wrong"
+#define ERROR_LOGIN     "error\tLogin error"
+
 namespace wind
 {
 

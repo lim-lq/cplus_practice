@@ -60,8 +60,8 @@ const char* MysqlDB::error()
 std::ostream& operator<<(std::ostream& os, const MYSQL_RESULT& result)
 {
     for ( MYSQL_RESULT::const_iterator it = result.begin(); it != result.end(); ++it ) {
+        os << "--------------------------------------" << '\n';
         for ( std::map<std::string, std::string>::const_iterator mit = it->begin(); mit != it->end(); ++mit ) {
-            os << "--------------------------------------" << '\n';
             os << mit->first << "\t" << mit->second << '\n';
         }
     }
