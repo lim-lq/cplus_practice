@@ -1,5 +1,5 @@
 #include "log.hpp"
-#include "../loginapp.h"
+#include "loginapp.h"
 
 #include <iostream>
 #include <sstream>
@@ -11,7 +11,6 @@ using namespace wind;
 
 int main(int argc, char* argv[])
 {
-    EndPoint endpoint;
     string host = "192.168.200.128";
     uint16_t port = 8000;
     istringstream iss;
@@ -39,7 +38,8 @@ int main(int argc, char* argv[])
 
     wind::common::LoggerInitialize("client.log");
 
-    int ret = endpoint.connect(host, port);
+    EndPoint endpoint(host, port);
+    int ret = endpoint.connect();
 
     if ( ret == -1 ) {
         LOG4CPLUS_INFO(LOGGER, "Connect server " << host

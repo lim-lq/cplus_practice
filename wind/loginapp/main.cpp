@@ -38,30 +38,15 @@ int main(int argc, char* argv[])
     ConfigureParser& config = SingletonConfigureParser::instance();
     config.read("loginapp.config");
 
-    string dbmgrHost;
-    uint16_t dbmgrPort;
-
-    if ( config.get("server", "host").empty() ) {
-        throw std::invalid_argument("Configure file has no server-host");
+    if ( config.get("loginapp", "host").empty() ) {
+        throw std::invalid_argument("Configure file has no loginapp-host");
     }
-    host = config.get("server", "host").empty();
+    host = config.get("loginapp", "host");
 
-    if ( config.get("server", "port").empty() ) {
-        throw std::invalid_argument("Configure file has no server-port");
+    if ( config.get("loginapp", "port").empty() ) {
+        throw std::invalid_argument("Configure file has no loginapp-port");
     }
-    port = config.get("server", "port").empty();
-
-    if ( config.get("dbmgr", "host").empty() ) {
-        throw std::invalid_argument("Configure file has no dbmgr-host");
-    }
-    dbmgrHost = config.get("dbmgr", "host").empty();
-
-    if ( config.get("dbmgr", "port").empty() ) {
-        throw std::invalid_argument("Configure file has no dbmgr-port");
-    }
-    dbmgrPort = config.get("server", "port").empty();
-
-    WorkThread::setDBmgr(dbmgrHost, dbmgrPort);
+    port = config.getInt16("loginapp", "port");
 
     wind::common::LoggerInitialize("loginapp.log");
     LoginApp app(host, port);

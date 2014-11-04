@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <map>
 
@@ -12,7 +13,7 @@ namespace wind
 {
 
 typedef std::map<std::string, std::string> KeyValue;
-std::string empty_str = "";
+static std::string empty_str = "";
 
 class ConfigureParser
 {
@@ -66,13 +67,39 @@ public:
         return empty_str;
     }
 
-    friend std::ostream& operator << (std::ostream& os, ConfigureParser& config);
+    const int getInt(const std::string& section, const std::string& key)
+    {
+        int value;
+        if ( m_sections.find(section) != m_sections.end() ) {
+            if ( m_sections[section].find(key) != m_sections[section].end() ) {
+                std::istringstream iss(m_sections[section][key]);
+                iss >> value;
+                return value;
+            }
+        }
+        return -1;
+    }
+
+    const uint16_t getInt16(const std::string& section, const std::string& key)
+    {
+        if ( m_sections.find(section) != m_sections.end() ) {
+            if ( m_sections[section].find(key) != m_sections[section].end() ) {
+                std::istringstream iss(m_sections[section][key]);
+                uint16_t value;
+                iss >> value;
+                return value;
+            }
+        }
+        return -1;
+    }
+
+    // friend std::ostream& operator << (std::ostream& os, ConfigureParser& config);
 
 private:
     std::map<std::string, KeyValue> m_sections;
 }; // end class ConfigureParser
 
-std::ostream& operator << (std::ostream& os, ConfigureParser& config)
+/*std::ostream& operator << (std::ostream& os, ConfigureParser& config)
 {
     for ( std::map<std::string, KeyValue>::iterator it = config.m_sections.begin();
           it != config.m_sections.end(); ++it ) {
@@ -89,7 +116,7 @@ std::ostream& operator << (std::ostream& os, ConfigureParser& config)
         }
     }
     return os;
-}
+}*/
 
 typedef boost::detail::thread::singleton<ConfigureParser> SingletonConfigureParser;
 

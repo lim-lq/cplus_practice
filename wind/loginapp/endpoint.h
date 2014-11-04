@@ -16,6 +16,8 @@ namespace wind
 
 class EndPoint{
 public:
+    EndPoint(){}
+    EndPoint(const int& fd);
     EndPoint(const std::string& host, const uint16_t& port);
     ~EndPoint();
 
@@ -27,6 +29,18 @@ public:
     int recv(const int& clientfd, char* buf, const uint32_t& size);
     int recv(char* buf, const uint32_t& size);
     int connect();
+    const std::string& getHost()
+    {
+        return m_host;
+    }
+    const uint16_t& getPort()
+    {
+        return m_port;
+    }
+    const int& getfd()
+    {
+        return m_serverfd;
+    }
 private:
     int m_serverfd;
     std::string m_host;

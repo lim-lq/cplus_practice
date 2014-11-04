@@ -1,5 +1,6 @@
 #include "loginapp.h"
 #include "log.hpp"
+#include "configureParser.hpp"
 
 #include <string.h>
 #include <errno.h>
@@ -8,117 +9,81 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <tr1/memory>
 
 namespace wind
 {
-std::string WorkThread::m_dbmgrHost = "";
-uint16_t WorkThread::m_dbmgrPort = 0;
-
-void WorkThread::setDBmgr(const std::string& host, const uint16_t& port)
+LoginTask::LoginTask(const int& fd, const std::string& dbmgrHost, const uint16_t& dbmgrPort) : 
+m_client(EndPoint(fd)), m_dbmgr(EndPoint(dbmgrHost, dbmgrPort))
 {
-    m_dbmgrHost = host;
-    m_dbmgrPort = port;
 }
 
-WorkThread::WorkThread(const int& id) :
-            m_dbmgr(EndPoint(WorkThread::m_dbmgrHost, WorkThread::m_dbmgrPort))
+LoginTask::~LoginTask()
 {
-    m_IsUsed = false;
-    m_IsExit = false;
-    m_id = id;
+    std::cout << "Deleted" << std::endl;
 }
 
-WorkThread::~WorkThread()
+void LoginTask::run()
 {
-    std::cout << "Thread - " << m_id << " was been destroyed." << std::endl;
-}
+    char buf[2048];
 
-void WorkThread::run()
-{
+    bzero(buf, 2048);
+    int ret = -2;
     while ( true ) {
-        LOCK();
-        wait();
-        UNLOCK();
-        std::cout << "I'm the thread " << m_id << std::endl;
-        std::cout << "And I get the task [" << m_task.fd << " "
-                  << m_task.host << " " << m_task.port << "]." << std::endl;
-        char buf[2048];
-        while ( true ) {
-            bzero(buf, 2048);
-            int ret = ::recv(m_task.fd, buf, 2048, 0);
-            if ( ret == 0 ) {
-                LOG4CPLUS_INFO(LOGGER, "The client " << m_task.host
-                                        << ":" << m_task.port << " has shutdown the connection");
-                close(m_task.fd);
-                bzero(&m_task, sizeof(m_task));
-                break;
-            } else if ( ret == -1 ) {
-                LOG4CPLUS_INFO(LOGGER, "Recieve message from client "
-                                        << m_task.host << ":" << m_task.port
-                                        << " error.");
-                close(m_task.fd);
-                bzero(&m_task, sizeof(m_task));
-                break;
-            }
-
-            LOG4CPLUS_INFO(LOGGER, "Recieve message ["
-                                    << buf << "] from client "
-                                    << m_task.host << ":"
-                                    << m_task.port);
-        }
-        int ret = m_dbmgr.connect();
-        if ( ret == -1 ) {
-            LOG4CPLUS_ERROR(LOGGER, "Connect dbmgr server failure"
-                                    << ", error code is [" << errno << "] -- "
-                                    << " Worker-" << m_id);
-            m_IsExit = true;
+        ret = m_client.recv(buf, 2048);
+        if ( ret == 0 ) {
+            LOG4CPLUS_INFO(LOGGER, "The client " << m_client.getHost()
+                                    << ":" << m_client.getPort() << " has shutdown the connection");
             return;
-        }
-
-        ret = m_dbmgr.send(buf);
-        if ( ret == -1 ) {
-            LOG4CPLUS_ERROR(LOGGER, "Send message to dbmgr server failure"
-                                    << ", error code is [" << errno << "] -- "
-                                    << " Worker-" << m_id);
-            m_IsExit = true;
-            return;            
-        }
-
-        ret = m_dbmgr.recv(buf, 2048);
-
-        if ( ret == -1 ) {
-            LOG4CPLUS_ERROR(LOGGER, "Recieve message from dbmgr server failure"
-                                    << ", error code is [" << errno << "] -- "
-                                    << " Worker-" << m_id);
-            m_IsExit = true;
+        } else if ( ret == -1 ) {
+            LOG4CPLUS_INFO(LOGGER, "Recieve message from client " << m_client.getfd() << " "
+                                    << m_client.getHost() << ":" << m_client.getPort()
+                                    << " failure, error code is [" << errno << "]");
             return;
-        } else if ( ret == 0 ) {
-            LOG4CPLUS_ERROR(LOGGER, "Dbmgr server has shutdown.");
-            m_IsExit = true;
-            return;
+        } else {
+            break;
         }
-
-        ret = ::send(m_task.fd, buf, strlen(buf), 0);
-        if ( ret == -1 ) {
-            LOG4CPLUS_ERROR(LOGGER, "Send to client " << m_task.host
-                                    << ":" << m_task.port
-                                    << "failure, error code is ["
-                                    << errno << "]");
-            m_IsExit = true;
-            return;
-        }
-
-        m_IsUsed = false;
     }
-}
 
-void WorkThread::assign_task(const Task& task)
-{
-    LOCK();
-    m_task = task;
-    m_IsUsed = true;
-    signal();
-    UNLOCK();
+    LOG4CPLUS_INFO(LOGGER, "Recieve message ["
+                            << buf << "] from client "
+                            << m_client.getHost() << ":"
+                            << m_client.getPort());
+
+    ret = m_dbmgr.connect();
+    if ( ret == -1 ) {
+        LOG4CPLUS_ERROR(LOGGER, "Connect dbmgr server failure"
+                                << ", error code is [" << errno << "] -- ");
+        return;
+    }
+
+    ret = m_dbmgr.send(buf);
+    if ( ret == -1 ) {
+        LOG4CPLUS_ERROR(LOGGER, "Send message to dbmgr server failure"
+                                << ", error code is [" << errno << "] -- ");
+        return;            
+    }
+
+    ret = m_dbmgr.recv(buf, 2048);
+
+    if ( ret == -1 ) {
+        LOG4CPLUS_ERROR(LOGGER, "Recieve message from dbmgr server failure"
+                                << ", error code is [" << errno << "] -- ");
+        return;
+    } else if ( ret == 0 ) {
+        LOG4CPLUS_ERROR(LOGGER, "Dbmgr server has shutdown.");
+        return;
+    }
+
+    ret = m_client.send(buf);
+    if ( ret == -1 ) {
+        LOG4CPLUS_ERROR(LOGGER, "Send to client " << m_client.getHost()
+                                << ":" << m_client.getPort()
+                                << "failure, error code is ["
+                                << errno << "]");
+        return;
+    }
+
 }
 
 LoginApp::LoginApp(const std::string& host, const uint16_t& port) :
@@ -135,14 +100,41 @@ LoginApp::LoginApp(const std::string& host, const uint16_t& port) :
 
     LOG4CPLUS_INFO(LOGGER, "Initialize loginapp success.");
     // initialize thread pool
-    m_threadpool.create(100);
-    m_threadpool.start();
+    ConfigureParser& config = SingletonConfigureParser::instance();
+    int size = 0;
+    if ( config.get("loginapp", "threadPoolSize").empty() ) {
+        LOG4CPLUS_ERROR(LOGGER, "There is no threadpool size setted, use default 100");
+        size = 100;
+    } else {
+        size = config.getInt("loginapp", "threadPoolSize");
+        if ( size < 0 ) {
+            LOG4CPLUS_WARN(LOGGER, "There threadpool size set error, can't use negative number");
+            throw std::runtime_error("There threadpool size set error, can't use negative number");
+        }
+    }
+    m_threadpool.create(size);
 }
 
 void LoginApp::run()
 {
     LOG4CPLUS_INFO(LOGGER, "Login App running.");
     std::cout << "Login App runing." << std::endl;
+
+    ConfigureParser& config = SingletonConfigureParser::instance();
+
+    std::string dbmgrHost;
+    uint16_t dbmgrPort;
+
+    if ( config.get("dbmgr", "host").empty() ) {
+        throw std::invalid_argument("Configure file has no dbmgr-host");
+    }
+    dbmgrHost = config.get("dbmgr", "host");
+
+    if ( config.get("dbmgr", "port").empty() ) {
+        throw std::invalid_argument("Configure file has no dbmgr-port");
+    }
+    dbmgrPort = config.getInt16("dbmgr", "port");
+
     while ( true ) {
         sockaddr_in clientAddr;
         int clientfd = m_endpoint.accept(clientAddr);
@@ -152,9 +144,9 @@ void LoginApp::run()
         }
         LOG4CPLUS_INFO(LOGGER, "A new client connected -- " << ::inet_ntoa(clientAddr.sin_addr)
                                 << ":" << ::ntohs(clientAddr.sin_port));
-        
-        Task task(clientfd, ::inet_ntoa(clientAddr.sin_addr), ::ntohs(clientAddr.sin_port));
-        m_threadpool.push_task(task);
+        std::cout << "Connect fd is " << clientfd << std::endl;
+        LoginTask* task = new LoginTask(clientfd, dbmgrHost, dbmgrPort);
+        m_threadpool.addTask(task);
     }
 }
 

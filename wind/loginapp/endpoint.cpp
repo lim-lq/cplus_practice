@@ -3,11 +3,14 @@
  * author: blond.li
  */
 #include <iostream>
+#include <sstream>
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <errno.h>
 
 #include "log.hpp"
 #include "utils.hpp"
@@ -15,6 +18,21 @@
 
 namespace wind
 {
+EndPoint::EndPoint(const int& fd) : m_serverfd(fd)
+{
+    sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+
+    int ret = ::getpeername(m_serverfd, (sockaddr*)&addr, &addrlen);
+    if ( ret == -1 ) {
+        LOG4CPLUS_ERROR(LOGGER, "Get client address failure, "
+                                << " error code is [" << errno << "]");
+        exit(1);
+    }
+    std::istringstream iss(::inet_ntoa(addr.sin_addr));
+    iss >> m_host;
+    m_port = ::ntohs(addr.sin_port);
+}
 
 EndPoint::EndPoint(const std::string& host, const uint16_t& port)
 {
@@ -24,6 +42,9 @@ EndPoint::EndPoint(const std::string& host, const uint16_t& port)
         print_error("Create socket");
         exit(1);
     }
+    int value = 1;
+    ::setsockopt(m_serverfd, SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value));
+
     m_host = host;
     m_port = port;
 }
@@ -31,6 +52,7 @@ EndPoint::EndPoint(const std::string& host, const uint16_t& port)
 EndPoint::~EndPoint()
 {
     if ( m_serverfd > 0 ) {
+        LOG4CPLUS_INFO(LOGGER, "close the fd.");
         close(m_serverfd);
     }
 }
