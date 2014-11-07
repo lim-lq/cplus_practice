@@ -3,11 +3,11 @@ COMMON := ../common
 LOG4CPLUS := ../../log4cplus
 
 LIB_DIR := $(LOG4CPLUS)/lib
-INC_DIR := $(COMMON) $(ROOT)/network $(ROOT)/mysql $(ROOT)/thread . $(LOG4CPLUS)/include
+INC_DIR := $(COMMON) $(ROOT)/network $(ROOT)/mysql $(ROOT)/thread . $(LOG4CPLUS)/include $(ROOT)/encryptor
 
-LIBS := pthread log4cplus mysqlclient
+LIBS := pthread log4cplus mysqlclient crypto
 
-SRC := $(wildcard *.cpp) $(wildcard $(ROOT)/network/*.cpp) $(wildcard $(ROOT)/mysql/*.cpp) $(wildcard $(ROOT)/thread/*.cpp)
+SRC := $(wildcard *.cpp) $(wildcard $(ROOT)/network/*.cpp) $(wildcard $(ROOT)/mysql/*.cpp) $(wildcard $(ROOT)/thread/*.cpp) $(wildcard $(ROOT)/encryptor/*.cpp)
 OBJS := $(patsubst %.cpp, %.o, $(SRC))
 
 CFLAGS := -g -Wall

@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 
+#include "cipher.h"
 #include "endpoint.h"
 #include "threadpool.h"
 
@@ -20,6 +21,8 @@ public:
 private:
     EndPoint m_client;
     EndPoint m_dbmgr;
+    Rsa m_rsa;
+    std::string m_publicKey;
 }; // end class LoginTask
 
 class LoginApp

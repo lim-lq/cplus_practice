@@ -77,7 +77,7 @@ bytePtr Rsa::privateDecrypt(bytePtr cipher)
     if ( m_privateKey == NULL ) {
         throw std::invalid_argument("No set private key");
     }
-    std::cout << cipher << std::endl;
+
     int len = RSA_size(m_privateKey);
     std::tr1::shared_ptr<uint8_t> to(new uint8_t[m_dataSize]);
 

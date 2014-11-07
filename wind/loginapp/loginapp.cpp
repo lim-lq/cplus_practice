@@ -9,6 +9,8 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <tr1/memory>
 
 namespace wind
@@ -16,6 +18,19 @@ namespace wind
 LoginTask::LoginTask(const int& fd, const std::string& dbmgrHost, const uint16_t& dbmgrPort) : 
 m_client(EndPoint(fd)), m_dbmgr(EndPoint(dbmgrHost, dbmgrPort))
 {
+    m_rsa.setPrivateKey("private.key");
+    std::fstream ifile("public.key", std::fstream::in);
+    std::string line;
+    std::ostringstream oss;
+    while ( ifile.peek() != EOF ) {
+        std::getline(ifile, line);
+        oss << line << '\n';
+    }
+
+    m_publicKey = oss.str();
+    LOG4CPLUS_INFO(LOGGER, "Public key is: \n"
+                            << m_publicKey);    
+    ifile.close();
 }
 
 LoginTask::~LoginTask()
@@ -29,6 +44,21 @@ void LoginTask::run()
 
     bzero(buf, 2048);
     int ret = -2;
+
+    int32_t length = m_publicKey.size();
+    uint8_t msg[4 + length];
+    memcpy(msg, reinterpret_cast<void*>(&length), 4);
+    memcpy(msg + 4, m_publicKey.c_str(), m_publicKey.size());
+    std::cout << "HAHA" << *reinterpret_cast<uint32_t*>(msg) << "HAHA" << std::endl;
+    ret = m_client.send((char*)msg);
+    if ( ret == -1 ) {
+        LOG4CPLUS_ERROR(LOGGER, "Send public key to client "
+                                << m_client.getHost() << ":"
+                                << m_client.getPort() << " failure,"
+                                << " error code is [" << errno << "]");
+        return;
+    }
+
     while ( true ) {
         ret = m_client.recv(buf, 2048);
         if ( ret == 0 ) {
@@ -45,8 +75,14 @@ void LoginTask::run()
         }
     }
 
+    bytePtr cipher(new uint8_t[256]);
+
+    memcpy(cipher.get(), buf, 256);
+
+    bytePtr plain = m_rsa.privateDecrypt(cipher);
+
     LOG4CPLUS_INFO(LOGGER, "Recieve message ["
-                            << buf << "] from client "
+                            << plain.get() << "] from client "
                             << m_client.getHost() << ":"
                             << m_client.getPort());
 
