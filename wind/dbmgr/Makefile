@@ -20,3 +20,6 @@ EXECUTABLE := $(TAR_DIR)/dbmgr
 $(EXECUTABLE) : $(OBJS)
 	rm -f $@
 	$(CXX) -o $(EXECUTABLE) $(OBJS) $(addprefix -l, $(LIBS)) $(addprefix -L, $(LIB_DIR)) $(addprefix -I, $(INC_DIR))
+
+clean:
+	rm -f $(OBJS)	

@@ -113,9 +113,7 @@ void ThreadPool::create(const int& num)
 
 int ThreadPool::addTask(Task* task)
 {
-    if ( m_freeThreadList.empty() ) {
-        return -1;
-    }
+    while ( m_freeThreadList.empty() ) {}
     LOCK();
     ThreadPtr thread = m_freeThreadList.front();
     m_freeThreadList.pop_front();

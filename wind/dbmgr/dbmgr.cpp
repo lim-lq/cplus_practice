@@ -18,6 +18,10 @@ DBmgrTask::DBmgrTask(const int& fd) : m_client(EndPoint(fd))
 
 }
 
+DBmgrTask::~DBmgrTask()
+{
+
+}
 void DBmgrTask::run()
 {
     ConfigureParser& config = SingletonConfigureParser::instance();
@@ -100,7 +104,6 @@ void DBmgrTask::run()
     } else {
         m_client.send(m_mysql.error(), strlen(m_mysql.error()));
     }
-    m_mysql.close();
 }
 
 DBmgr::DBmgr(const std::string& host, const uint16_t& port) : m_endpoint(EndPoint(host, port))

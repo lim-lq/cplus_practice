@@ -2,45 +2,47 @@
 #include "cipher.h"
 #include "loginapp.h"
 
+#include <vector>
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <stdexcept>
 #include <tr1/memory>
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
+#include <pthread.h>
+#include <sys/stat.h>
 
 using namespace std;
 using namespace wind;
 
-int main(int argc, char* argv[])
+struct LoginInfo
 {
-    string host = "192.168.200.128";
-    uint16_t port = 8000;
-    istringstream iss;
+    LoginInfo(const std::string& host, const uint16_t& port, const int& id)
+    : m_host(host), m_port(port), m_tid(id)
+    {
 
-    int opt = 0;
-    while ( (opt = getopt(argc, argv, "i:p:h")) != -1 ) {
-        switch ( opt ) {
-            case 'i':
-                host = optarg;
-                break;
-            case 'p':
-                iss.str(optarg);
-                iss >> port;
-                break;
-            case 'h':
-                cout << "Usage: "
-                     << argv[0]
-                     << " -i <host>"
-                     << " -p <port>." << endl;
-                return 0;
-            default:
-                break;
-        }
     }
+    string m_host;
+    uint16_t m_port;
+    int m_tid;
+};
 
-    wind::common::LoggerInitialize("client.log");
+void* login(void* args)
+{
+    LoginInfo* p_loginInfo = (LoginInfo*)args;
+    string host = p_loginInfo->m_host;
+    uint16_t port = p_loginInfo->m_port;
+
+    ostringstream oss;
+    oss << "./" << p_loginInfo->m_tid;
+    cout << oss.str() << endl;
+    mkdir(oss.str().c_str(), 0744);
+    string publicKey_dir = oss.str() + "/public.key";
+    cout << publicKey_dir << endl;
+    // string publicKey_dir = "public.key";
 
     EndPoint endpoint(host, port);
     int ret = endpoint.connect();
@@ -48,7 +50,7 @@ int main(int argc, char* argv[])
     if ( ret == -1 ) {
         LOG4CPLUS_INFO(LOGGER, "Connect server " << host
                             << ":" << port << " failure, error code is[" << errno << "]");
-        return -1;
+        return NULL;
     }
 
     uint8_t lenbuf[4];
@@ -58,11 +60,11 @@ int main(int argc, char* argv[])
                                 << host << ":" << port
                                 << " failure, error code is["
                                 << errno << "]");
-        return -1;
+        return NULL;
     } else if ( ret == 0 ) {
         LOG4CPLUS_INFO(LOGGER, "Server " << host << ":" << port
                                 << " has shutdown the connect.");
-        return -1;
+        return NULL;
     }
 
     int data_length = *reinterpret_cast<int*>(lenbuf);
@@ -82,23 +84,23 @@ int main(int argc, char* argv[])
                                     << host << ":" << port
                                     << " failure, error code is["
                                     << errno << "]");
-            return -1;
+            return NULL;
         } else if ( ret == 0 ) {
             LOG4CPLUS_INFO(LOGGER, "Server " << host << ":" << port
                                     << " has shutdown the connect.");
-            return -1;
+            return NULL;
         }
 
         memcpy(public_key.get() + recv_size, tmpbuf.get(), ret);
         recv_size += ret;
     }
 
-    fstream file("public.key", fstream::out | fstream::trunc);
+    fstream file(publicKey_dir.c_str(), fstream::out | fstream::trunc);
     file << public_key.get();
     file.close();
     Rsa rsa;
 
-    rsa.setPublicKey("public.key");
+    rsa.setPublicKey(publicKey_dir.c_str());
     // rsa.setPrivateKey("private.key");
 
     string data = "login\tliqing 123\0";
@@ -138,9 +140,75 @@ int main(int argc, char* argv[])
                                 << host << ":" << port
                                 << " failure, error code is["
                                 << errno << "]");
-        return -1;
+        return NULL;
     }
 
     cout << "Send " << ret << " size data." << endl;
+    delete p_loginInfo;
+    return NULL;
+}
+
+int main(int argc, char* argv[])
+{
+    string host = "192.168.200.128";
+    uint16_t port = 8000;
+    istringstream iss;
+    int connect_num = 10;
+
+    int opt = 0;
+    while ( (opt = getopt(argc, argv, "i:p:n:h")) != -1 ) {
+        switch ( opt ) {
+            case 'i':
+                host = optarg;
+                break;
+            case 'p':
+                iss.str(optarg);
+                iss >> port;
+                break;
+            case 'n':
+                iss.str(optarg);
+                iss >> connect_num;
+                break;
+            case 'h':
+                cout << "Usage: "
+                     << argv[0]
+                     << " -i <host>"
+                     << " -p <port>"
+                     << " -n <connect num>."
+                     << endl;
+                return 0;
+            default:
+                break;
+        }
+    }
+
+    wind::common::LoggerInitialize("client.log");
+
+    vector<int> threads;
+
+    int ret;
+
+    for ( int i = 0; i < connect_num; ++i ) {
+        pthread_t tid;
+        LoginInfo* info = new LoginInfo(host, port, i);
+        try {
+            if ( (ret = pthread_create(&tid, NULL, login, info)) != 0 ) {
+                throw std::invalid_argument("Create thread error");
+            }
+        } catch ( const std::invalid_argument& e ) {
+            cout << e.what() << endl;
+            cout << ret << endl;
+            cout << "EAGAIN: " << EAGAIN << endl;
+            cout << "EINVAL: " << EINVAL << endl;
+            cout << "EPERM: " << EPERM << endl;
+            return -1;
+        }
+        threads.push_back(tid);
+    }
+
+    for ( vector<int>::iterator it = threads.begin(); it != threads.end(); ++it ) {
+        pthread_join(*it, NULL);
+    }
+
     return 0;
 }

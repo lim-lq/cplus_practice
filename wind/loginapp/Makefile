@@ -33,3 +33,6 @@ $(EXECUTABLE) : $(OBJS)
 $(CLIENT) : $(CLIENT_OBJS)
 	rm -f $@
 	$(CXX) -o $(CLIENT) $(CLIENT_OBJS) $(addprefix -L, $(LIB_DIR)) $(addprefix -l, $(LIBS)) $(addprefix -I, $(INC_DIR))
+
+clean:
+	rm -f $(OBJS)	

@@ -18,7 +18,7 @@ class DBmgrTask : public Task
 public:
     DBmgrTask(const int& fd);
     ~DBmgrTask();
-    void run();
+    virtual void run();
 private:
     EndPoint m_client;
     MysqlDB m_mysql;
