@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <string.h>
 #include <errno.h>
 
 #include "log.hpp"
@@ -92,14 +93,14 @@ int EndPoint::connect()
     return ::connect(m_serverfd, (sockaddr*)&serverAddr, sizeof(serverAddr));
 }
 
-int EndPoint::send(const int& clientfd, const std::string& message)
+int EndPoint::send(const int& clientfd, const void* message, const int& size)
 {
-    return ::send(clientfd, message.c_str(), message.size(), 0);
+    return ::send(clientfd, message, size, 0);
 }
 
-int EndPoint::send(const std::string& message)
+int EndPoint::send(const void* message, const int& size)
 {
-    return ::send(m_serverfd, message.c_str(), message.size(), 0);
+    return ::send(m_serverfd, message, size, 0);
 }
 
 int EndPoint::recv(const int& clientfd, char* buf, const uint32_t& size)

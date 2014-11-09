@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     bytePtr cipher = rsa.publicEncrypt(plain);
 
     bytePtr decrypt_text = rsa.privateDecrypt(cipher);
-    cout << decrypt_text.get() << endl;
+    cout << decrypt_text.first.get() << endl;
 
 /*    fstream file("cipher.txt", fstream::trunc | fstream::out);
     file << cipher;

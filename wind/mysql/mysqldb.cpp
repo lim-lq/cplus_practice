@@ -13,6 +13,7 @@ MysqlDB::MysqlDB() : m_result(NULL), m_row(NULL), m_fields(NULL)
 MysqlDB::~MysqlDB()
 {
     ::mysql_close(&m_connection);
+    ::mysql_free_result(m_result);
 }
 
 ::MYSQL* MysqlDB::connect(const std::string& host,
@@ -27,6 +28,12 @@ MysqlDB::~MysqlDB()
                                 passwd.c_str(),
                                 db.c_str(),
                                 port, 0, 0);
+}
+
+void MysqlDB::close()
+{
+    ::mysql_close(&m_connection);
+    ::mysql_free_result(m_result);
 }
 
 MYSQL_RESULT MysqlDB::query(const std::string& sql)

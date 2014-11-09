@@ -7,7 +7,7 @@ class Task
 {
 public:
     Task(){}
-    ~Task(){}
+    virtual ~Task(){}
     virtual void run(){};
 }; // end class Task
 } // end namespace wind

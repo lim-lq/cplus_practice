@@ -28,6 +28,7 @@ public:
                    const uint32_t& port
                    );
     MYSQL_RESULT query(const std::string&);
+    void close();
     const char* error();
 private:
     ::MYSQL m_connection;

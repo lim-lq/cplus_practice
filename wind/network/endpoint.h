@@ -24,8 +24,8 @@ public:
     int bind();
     int accept(sockaddr_in& clientAddr);
     int listen(const uint32_t& listen_num);
-    int send(const int& clientfd, const std::string& message);
-    int send(const std::string& message);
+    int send(const int& clientfd, const void* message, const int& size);
+    int send(const void* message, const int& size);
     int recv(const int& clientfd, char* buf, const uint32_t& size);
     int recv(char* buf, const uint32_t& size);
     int connect();

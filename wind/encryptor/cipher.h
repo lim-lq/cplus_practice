@@ -12,11 +12,11 @@
 namespace wind
 {
 
-typedef std::tr1::shared_ptr<uint8_t> bytePtr;
+typedef std::pair<std::tr1::shared_ptr<uint8_t>, uint32_t> bytePtr;
 
 class Rsa{
 public:
-    Rsa() : m_dataSize(2048), m_publicKey(NULL), m_privateKey(NULL)
+    Rsa() : m_publicKey(NULL), m_privateKey(NULL)
     {}
     ~Rsa(){}
 
@@ -24,13 +24,12 @@ public:
 
     void setPublicKey(const std::string& publicFile);
     void setPrivateKey(const std::string& privateFile);
-
+    int getRsaSize();
     bytePtr publicEncrypt(const std::string& plain);
     std::string publicDecrypt(RSA* publicKey, const std::string& cipher);
     std::string privateEncrypt(RSA* privateKey, const std::string& plain);
     bytePtr privateDecrypt(bytePtr cipher);
 private:
-    int m_dataSize;
     RSA* m_publicKey;
     RSA* m_privateKey;
 }; // end class Rsa

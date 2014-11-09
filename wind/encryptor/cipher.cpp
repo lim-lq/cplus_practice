@@ -18,6 +18,18 @@ std::string Rsa::error(const std::string& err)
     return oss.str();
 }
 
+int Rsa::getRsaSize()
+{
+    if ( m_privateKey != NULL ) {
+        return RSA_size(m_privateKey);
+    }
+
+    if ( m_publicKey != NULL ) {
+        return RSA_size(m_publicKey);
+    }
+    throw std::invalid_argument("No public or private key setted.");
+}
+
 void Rsa::setPublicKey(const std::string& publicFile)
 {
     FILE* fp;
@@ -52,12 +64,12 @@ bytePtr Rsa::publicEncrypt(const std::string& plain)
     int len = RSA_size(m_publicKey);
     std::tr1::shared_ptr<uint8_t> to(new uint8_t[len]);
 
-    m_dataSize = plain.size();
     int ret = RSA_public_encrypt(plain.size(), from, to.get(), m_publicKey, PADDING);
     if ( ret == -1 ) {
         throw std::runtime_error(error("Use public key encrypt"));
     }
-    return to;
+    bytePtr cipher(to, (int)plain.size());
+    return cipher;
 }
 
 std::string Rsa::publicDecrypt(RSA* publicKey, const std::string& cipher)
@@ -79,14 +91,16 @@ bytePtr Rsa::privateDecrypt(bytePtr cipher)
     }
 
     int len = RSA_size(m_privateKey);
-    std::tr1::shared_ptr<uint8_t> to(new uint8_t[m_dataSize]);
+    std::tr1::shared_ptr<uint8_t> to(new uint8_t[cipher.second]);
 
-    int ret = RSA_private_decrypt(len, cipher.get(), to.get(), m_privateKey, PADDING);
+    int ret = RSA_private_decrypt(len, cipher.first.get(), to.get(), m_privateKey, PADDING);
     if ( ret == -1 ) {
         throw std::runtime_error(error("Use private key decrypt"));
     }
 
-    return to;
+    bytePtr plain(to, cipher.second);
+
+    return plain;
 }
 
 } // end namespace wind

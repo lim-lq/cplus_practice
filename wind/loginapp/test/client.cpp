@@ -15,7 +15,7 @@ using namespace wind;
 
 int main(int argc, char* argv[])
 {
-    string host = "10.192.0.5";
+    string host = "192.168.200.128";
     uint16_t port = 8000;
     istringstream iss;
 
@@ -65,21 +65,18 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    const int data_length = *reinterpret_cast<int*>(lenbuf);
+    int data_length = *reinterpret_cast<int*>(lenbuf);
 
-    cout << data_length << endl;
-    int length = data_length;
+    cout << "Need recieve " << data_length << " byte data." << endl;
     int recv_size = 0;
-    const int once_size = data_length % 2048;
+    int once_size = data_length % 2048;
 
     std::tr1::shared_ptr<char> tmpbuf(new char[once_size]);
-    // char public_key[length];
+    std::tr1::shared_ptr<char> public_key(new char[data_length]);
 
-    cout << once_size << endl;
-
-/*    while ( recv_size != data_length ) {
-        ret = endpoint.recv(tmpbuf, data_length % 2048);
-        cout << ret << endl;
+    while ( recv_size != data_length ) {
+        ret = endpoint.recv(tmpbuf.get(), once_size);
+        cout << "Recieve " << ret << " bytes data" << endl;
         if ( ret == -1 ) {
             LOG4CPLUS_INFO(LOGGER, "Recieve message from server "
                                     << host << ":" << port
@@ -92,26 +89,49 @@ int main(int argc, char* argv[])
             return -1;
         }
 
-        memcpy(public_key + recv_size, tmpbuf, ret);
+        memcpy(public_key.get() + recv_size, tmpbuf.get(), ret);
         recv_size += ret;
     }
 
     fstream file("public.key", fstream::out | fstream::trunc);
-    file << data_length;
+    file << public_key.get();
     file.close();
-    Rsa rsa;*/
+    Rsa rsa;
 
-    // rsa.setPublicKey("public.key");
-    // bytePtr cipher = rsa.publicEncrypt("liqing 123");
+    rsa.setPublicKey("public.key");
+    // rsa.setPrivateKey("private.key");
+
+    string data = "login\tliqing 123\0";
+
+    // bytePtr cipher = rsa.publicEncrypt(data.c_str());
+    // bytePtr plain = rsa.privateDecrypt(cipher);
+    // cout << plain.first.get() << endl;
+/*    ostringstream oss;
+    oss << data.size() << '\t' << data;*/
+    bytePtr cipher = rsa.publicEncrypt(data.c_str());
+    file.open("cipher.txt", fstream::out | fstream::trunc);
+    file << cipher.first.get();
+    file.close();
+    int plain_size = data.size();
+    int cipher_size = rsa.getRsaSize();
+    int data_size = cipher_size + 4 + 4;
     /*
      * 消息字段定义
      * method\tdata
      * login    user passwd
      * register user passwd
      */
-/*    ostringstream oss;
-    oss << "login\t" << cipher.get();
-    ret = endpoint.send(oss.str());
+    file.open("cipher.txt", fstream::out | fstream::trunc);
+    file << cipher.first.get();
+    file.close();
+
+    // cipher size and plain size and cipher
+    uint8_t msg[data_size];
+    memcpy(msg, reinterpret_cast<void*>(&cipher_size), 4);
+    memcpy(msg + 4, reinterpret_cast<void*>(&plain_size), 4);
+    memcpy(msg + 4 + 4, cipher.first.get(), cipher_size);
+
+    ret = endpoint.send(msg, sizeof(msg));
 
     if ( ret == -1 ) {
         LOG4CPLUS_INFO(LOGGER, "Send message to server "
@@ -119,7 +139,8 @@ int main(int argc, char* argv[])
                                 << " failure, error code is["
                                 << errno << "]");
         return -1;
-    }*/
+    }
 
+    cout << "Send " << ret << " size data." << endl;
     return 0;
 }

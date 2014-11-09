@@ -1,9 +1,9 @@
 ROOT := ../../wind
 COMMON := ../common
-LOG4CPLUS := ../../log4cplus
-
-LIB_DIR := $(LOG4CPLUS)/lib
-INC_DIR := $(COMMON) $(ROOT)/network $(ROOT)/mysql $(ROOT)/thread . $(LOG4CPLUS)/include $(ROOT)/encryptor
+LOG4CPLUS := ../log4cplus
+BOOST := /home/sointux/software/boost_1_56_0
+LIB_DIR := /home/sointux/software/log4cplus-REL_1_1_2/src/.libs
+INC_DIR := $(COMMON) $(ROOT)/network $(ROOT)/mysql $(ROOT)/thread . $(LOG4CPLUS)/include $(ROOT)/encryptor $(BOOST)
 
 LIBS := pthread log4cplus mysqlclient crypto
 

@@ -40,17 +40,14 @@ LoginTask::~LoginTask()
 
 void LoginTask::run()
 {
-    char buf[2048];
-
-    bzero(buf, 2048);
     int ret = -2;
 
     int32_t length = m_publicKey.size();
     uint8_t msg[4 + length];
     memcpy(msg, reinterpret_cast<void*>(&length), 4);
-    memcpy(msg + 4, m_publicKey.c_str(), m_publicKey.size());
-    std::cout << "HAHA" << *reinterpret_cast<uint32_t*>(msg) << "HAHA" << std::endl;
-    ret = m_client.send((char*)msg);
+    memcpy(msg + 4, m_publicKey.c_str(), length);
+    std::cout << "HAHA " << msg[5] << " HAHA" << std::endl;
+    ret = m_client.send(msg, sizeof(msg));
     if ( ret == -1 ) {
         LOG4CPLUS_ERROR(LOGGER, "Send public key to client "
                                 << m_client.getHost() << ":"
@@ -59,8 +56,47 @@ void LoginTask::run()
         return;
     }
 
-    while ( true ) {
-        ret = m_client.recv(buf, 2048);
+    uint8_t lenbuf[4];
+
+    ret = m_client.recv((char*)lenbuf, 4);
+    if ( ret == 0 ) {
+        LOG4CPLUS_INFO(LOGGER, "The client " << m_client.getHost()
+                                << ":" << m_client.getPort() << " has shutdown the connection");
+        return;
+    } else if ( ret == -1 ) {
+        LOG4CPLUS_INFO(LOGGER, "Recieve message from client " << m_client.getfd() << " "
+                                << m_client.getHost() << ":" << m_client.getPort()
+                                << " failure, error code is [" << errno << "]");
+        return;
+    }
+
+    int cipher_size = *reinterpret_cast<int*>(lenbuf);
+
+    LOG4CPLUS_INFO(LOGGER, "cipher_size: " << cipher_size);
+
+    ret = m_client.recv((char*)lenbuf, 4);
+    if ( ret == 0 ) {
+        LOG4CPLUS_INFO(LOGGER, "The client " << m_client.getHost()
+                                << ":" << m_client.getPort() << " has shutdown the connection");
+        return;
+    } else if ( ret == -1 ) {
+        LOG4CPLUS_INFO(LOGGER, "Recieve message from client " << m_client.getfd() << " "
+                                << m_client.getHost() << ":" << m_client.getPort()
+                                << " failure, error code is [" << errno << "]");
+        return;
+    }
+
+    int plain_size = *reinterpret_cast<int*>(lenbuf);
+    LOG4CPLUS_INFO(LOGGER, "plain_size: " << plain_size);
+
+    int once_size = cipher_size % 2048;
+
+    std::tr1::shared_ptr<uint8_t> msgbuf(new uint8_t[once_size]);
+    std::tr1::shared_ptr<uint8_t> messages(new uint8_t[cipher_size]);
+    int recv_size = 0;
+
+    while ( recv_size < cipher_size ) {
+        ret = m_client.recv((char*)msgbuf.get(), once_size);
         if ( ret == 0 ) {
             LOG4CPLUS_INFO(LOGGER, "The client " << m_client.getHost()
                                     << ":" << m_client.getPort() << " has shutdown the connection");
@@ -70,19 +106,19 @@ void LoginTask::run()
                                     << m_client.getHost() << ":" << m_client.getPort()
                                     << " failure, error code is [" << errno << "]");
             return;
-        } else {
-            break;
         }
+        memcpy(messages.get() + recv_size, msgbuf.get(), ret);
+        recv_size += ret;
     }
 
-    bytePtr cipher(new uint8_t[256]);
-
-    memcpy(cipher.get(), buf, 256);
+    bytePtr cipher(messages, plain_size);
 
     bytePtr plain = m_rsa.privateDecrypt(cipher);
-
+    std::fstream file("cipher.txt", std::fstream::out | std::fstream::trunc);
+    file << *plain.first;
+    file.close();
     LOG4CPLUS_INFO(LOGGER, "Recieve message ["
-                            << plain.get() << "] from client "
+                            << plain.first.get() << "]" << plain.second << " from client "
                             << m_client.getHost() << ":"
                             << m_client.getPort());
 
@@ -93,17 +129,18 @@ void LoginTask::run()
         return;
     }
 
-    ret = m_dbmgr.send(buf);
+    ret = m_dbmgr.send(plain.first.get(), plain_size);
     if ( ret == -1 ) {
         LOG4CPLUS_ERROR(LOGGER, "Send message to dbmgr server failure"
                                 << ", error code is [" << errno << "] -- ");
         return;            
     }
 
-    LOG4CPLUS_INFO(LOGGER, "Send message " << buf << " to dbmgr"
+    LOG4CPLUS_INFO(LOGGER, "Send message " << plain.first.get() << " to dbmgr"
                             << " " << m_dbmgr.getHost() << ":"
                             << m_dbmgr.getPort());
 
+    char buf[2048];
     ret = m_dbmgr.recv(buf, 2048);
 
     if ( ret == -1 ) {
@@ -117,7 +154,7 @@ void LoginTask::run()
 
     LOG4CPLUS_INFO(LOGGER, "Recieve message [" << buf << "] from dbmgr server");
 
-    ret = m_client.send(buf);
+    ret = m_client.send(buf, strlen(buf));
     if ( ret == -1 ) {
         LOG4CPLUS_ERROR(LOGGER, "Send to client " << m_client.getHost()
                                 << ":" << m_client.getPort()

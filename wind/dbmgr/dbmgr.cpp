@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <arpa/inet.h>
+#include <string.h>
 #include <boost/algorithm/string.hpp>
 
 #include "dbmgr.h"
@@ -81,7 +82,7 @@ void DBmgrTask::run()
     boost::algorithm::split(msgs, buf, boost::algorithm::is_any_of("\t"));
     if ( msgs.size() != 2 ) {
         LOG4CPLUS_WARN(LOGGER, "The message format is wrong");
-        m_client.send(ERROR_FORMAT);
+        m_client.send(ERROR_FORMAT, strlen(ERROR_FORMAT));
         return;
     }
 
@@ -89,16 +90,17 @@ void DBmgrTask::run()
     if ( msgs[0] == "login" ) {
         std::vector<std::string> user_info;
         boost::algorithm::split(user_info, msgs[1], boost::algorithm::is_any_of(" "));
-        sql += "select * from users where name='" + user_info[0] + "' and passwd='" + user_info[1] + "'";
+        sql += "select * from users where user='" + user_info[0] + "' and passwd='" + user_info[1] + "'";
     }
 
     MYSQL_RESULT result = m_mysql.query(sql);
     if ( result.size() ) {
         std::cout << result << std::endl;
-        m_client.send("Login success");
+        m_client.send("Login success", 13);
     } else {
-        m_client.send(m_mysql.error());
+        m_client.send(m_mysql.error(), strlen(m_mysql.error()));
     }
+    m_mysql.close();
 }
 
 DBmgr::DBmgr(const std::string& host, const uint16_t& port) : m_endpoint(EndPoint(host, port))
